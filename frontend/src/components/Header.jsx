@@ -1,6 +1,12 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-function Header({ variant = "home" }) {
+function Header({
+  variant = "home",
+  showLogin = false,
+  showSignup = false,
+}) {
+  const navigate = useNavigate();
+
   return (
     <header className="navbar">
       <Link to="/" className="brand">
@@ -20,10 +26,35 @@ function Header({ variant = "home" }) {
       )}
 
       {variant === "auth" && (
-        <nav className="nav-actions" aria-label="Authentication navigation">
-          <Link to="/" className="back-link">
-            Back home
-          </Link>
+        <nav
+          className="nav-actions"
+          aria-label="Authentication navigation"
+        >
+          <button
+            type="button"
+            className="nav-link header-text-button"
+            onClick={() => navigate(-1)}
+          >
+            Back
+          </button>
+
+          {showLogin && (
+            <Link
+              to="/login"
+              className="button button-small button-outline"
+            >
+              Log in
+            </Link>
+          )}
+
+          {showSignup && (
+            <Link
+              to="/signup"
+              className="button button-small button-outline"
+            >
+              Sign up
+            </Link>
+          )}
         </nav>
       )}
 
