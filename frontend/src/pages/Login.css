@@ -1,0 +1,161 @@
+.login-main {
+  width: min(1050px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 60px 0 70px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(390px, 0.72fr);
+  gap: 80px;
+  align-items: center;
+  flex: 1;
+}
+
+.login-intro {
+  max-width: 540px;
+}
+
+.login-intro h1 {
+  margin: 0;
+  font-size: clamp(2.8rem, 5vw, 4.8rem);
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
+
+.login-intro h1 span {
+  color: var(--olive);
+}
+
+.login-intro > p:not(.eyebrow) {
+  margin: 24px 0 0;
+  max-width: 510px;
+  color: var(--text-soft);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.login-card {
+  padding: 34px;
+  border: 1px solid var(--border);
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--shadow);
+}
+
+.login-heading {
+  margin-bottom: 28px;
+}
+
+.login-heading h2 {
+  margin: 0;
+  font-size: 1.8rem;
+  letter-spacing: -0.04em;
+}
+
+.login-heading > p:last-child {
+  margin: 8px 0 0;
+  color: var(--text-soft);
+  font-size: 0.86rem;
+}
+
+.login-form {
+  display: grid;
+  gap: 18px;
+}
+
+.login-field {
+  display: grid;
+  gap: 7px;
+}
+
+.login-field > span {
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.login-field input {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 14px;
+  border: 1px solid #ddd5c7;
+  border-radius: 12px;
+  outline: none;
+  background: #fffefa;
+  color: var(--text);
+
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.login-field input::placeholder {
+  color: #aaa498;
+}
+
+.login-field input:focus {
+  border-color: var(--olive);
+  box-shadow: 0 0 0 4px rgba(85, 107, 47, 0.09);
+}
+
+.login-options {
+  margin-top: -4px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.forgot-password-link {
+  color: var(--brown);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.forgot-password-link:hover {
+  color: var(--olive);
+}
+
+.login-switch {
+  margin: 22px 0 0;
+  text-align: center;
+  color: var(--text-soft);
+  font-size: 0.86rem;
+}
+
+.login-switch a {
+  color: var(--olive);
+  font-weight: 750;
+}
+
+@media (max-width: 850px) {
+  .login-main {
+    grid-template-columns: 1fr;
+    gap: 38px;
+    padding-top: 32px;
+  }
+
+  .login-intro {
+    max-width: 680px;
+  }
+
+  .login-intro h1 {
+    font-size: clamp(2.7rem, 8vw, 4rem);
+  }
+}
+
+@media (max-width: 600px) {
+  .login-main {
+    width: min(100% - 28px, 1050px);
+    padding: 26px 0 44px;
+    gap: 30px;
+  }
+
+  .login-intro h1 {
+    font-size: clamp(2.5rem, 11vw, 3.3rem);
+  }
+
+  .login-intro > p:not(.eyebrow) {
+    font-size: 0.94rem;
+  }
+
+  .login-card {
+    padding: 24px 18px;
+    border-radius: 20px;
+  }
+}
