@@ -211,11 +211,23 @@ a {
   margin: 0;
 }
 
+.app-user-name {
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (max-width: 600px) {
   .navbar,
   .auth-header,
   .site-footer {
     width: min(100% - 28px, 1180px);
+  }
+
+  .app-user-name {
+    max-width: 90px;
+    font-size: 0.9rem;
   }
 
   .navbar,
