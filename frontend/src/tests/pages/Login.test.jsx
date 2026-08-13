@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import Login from "../../pages/Login";
 
 const { signInMock } = vi.hoisted(() => ({
@@ -18,8 +18,11 @@ vi.mock("../../lib/supabase", () => ({
 
 function renderLogin() {
   render(
-    <MemoryRouter>
-      <Login />
+    <MemoryRouter initialEntries={["/login"]}>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/dashboard" element={<h1>Dashboard destination</h1>} />
+      </Routes>
     </MemoryRouter>
   );
 }
@@ -121,7 +124,7 @@ describe("Login", () => {
     });
   });
 
-  it("shows a success message after login", async () => {
+  it("redirects to the dashboard after successful login", async () => {
     const user = userEvent.setup();
 
     signInMock.mockResolvedValue({
@@ -140,7 +143,9 @@ describe("Login", () => {
     await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     expect(
-      await screen.findByText(/signed in successfully/i)
+      await screen.findByRole("heading", {
+        name: /dashboard destination/i,
+      })
     ).toBeInTheDocument();
   });
 
