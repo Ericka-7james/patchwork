@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import Signup from "../../pages/Signup";
@@ -73,8 +73,16 @@ describe("Signup", () => {
     ).toHaveAttribute("href", "/");
 
     expect(
-      screen.getByRole("link", { name: /back home/i })
-    ).toHaveAttribute("href", "/");
+      screen.getByRole("button", { name: /back/i })
+    ).toBeInTheDocument();
+
+    const authNavigation = screen.getByRole("navigation", {
+      name: /authentication navigation/i,
+    });
+
+    expect(
+      within(authNavigation).getByRole("link", { name: /log in/i })
+    ).toHaveAttribute("href", "/login");
   });
 
   it("renders the footer", () => {
