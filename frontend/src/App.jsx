@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 
+// TEMP
+import { supabase } from "./lib/supabase";
+
 function App() {
   const [backendStatus, setBackendStatus] = useState("Checking...");
 
@@ -12,6 +15,14 @@ function App() {
       .catch(() => {
         setBackendStatus("Backend unavailable");
       });
+
+    supabase.auth.getSession().then(({ error }) => {
+      if (error) {
+        console.error("Supabase connection error:", error);
+      } else {
+        console.log("Supabase connected");
+      }
+    });
   }, []);
 
   return (
