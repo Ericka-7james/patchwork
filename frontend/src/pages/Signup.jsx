@@ -115,7 +115,9 @@ function Signup() {
           <div className="signup-heading">
             <p className="eyebrow">Create account</p>
             <h2>Welcome to PatchWork</h2>
-            <p>Email signup is available now. Phone authentication comes next.</p>
+            <p>
+              Email signup is available now. Phone authentication comes next.
+            </p>
           </div>
 
           <form className="signup-form" onSubmit={handleSubmit}>
@@ -237,8 +239,7 @@ function Signup() {
           </form>
 
           <p className="auth-switch">
-            Already have an account?{" "}
-            <Link to="/login">Log in</Link>
+            Already have an account? <Link to="/login">Log in</Link>
           </p>
         </section>
       </main>

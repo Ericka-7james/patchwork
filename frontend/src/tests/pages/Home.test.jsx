@@ -15,9 +15,7 @@ describe("Home", () => {
   it("renders the PatchWork brand", () => {
     renderHome();
 
-    expect(
-        screen.getByRole("link", { name: "PatchWork" })
-    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "PatchWork" })).toBeInTheDocument();
   });
 
   it("renders the main hero heading", () => {

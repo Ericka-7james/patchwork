@@ -48,9 +48,7 @@ describe("validatePassword", () => {
     });
 
     expect(result.isValid).toBe(false);
-    expect(result.errors).toContain(
-      "Password cannot contain your username."
-    );
+    expect(result.errors).toContain("Password cannot contain your username.");
   });
 
   it("rejects a password containing the email local part", () => {
@@ -73,9 +71,7 @@ describe("validatePassword", () => {
     });
 
     expect(result.isValid).toBe(false);
-    expect(result.errors).toContain(
-      "Password cannot contain your first name."
-    );
+    expect(result.errors).toContain("Password cannot contain your first name.");
   });
 
   it("rejects a password containing the last name", () => {
@@ -86,9 +82,7 @@ describe("validatePassword", () => {
     });
 
     expect(result.isValid).toBe(false);
-    expect(result.errors).toContain(
-      "Password cannot contain your last name."
-    );
+    expect(result.errors).toContain("Password cannot contain your last name.");
   });
 
   it("checks rules case-insensitively", () => {
@@ -99,9 +93,7 @@ describe("validatePassword", () => {
     });
 
     expect(result.isValid).toBe(false);
-    expect(result.errors).toContain(
-      "Password cannot contain your username."
-    );
+    expect(result.errors).toContain("Password cannot contain your username.");
   });
 
   it("returns multiple errors when multiple rules fail", () => {
@@ -119,17 +111,13 @@ describe("validatePassword", () => {
       "Password must be at least 9 characters long."
     );
 
-    expect(result.errors).toContain(
-      "Password cannot contain your username."
-    );
+    expect(result.errors).toContain("Password cannot contain your username.");
 
     expect(result.errors).toContain(
       "Password cannot contain the first part of your email address."
     );
 
-    expect(result.errors).toContain(
-      "Password cannot contain your first name."
-    );
+    expect(result.errors).toContain("Password cannot contain your first name.");
   });
 
   it("does not fail on empty optional comparison values", () => {

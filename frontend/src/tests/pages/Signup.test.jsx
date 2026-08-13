@@ -28,18 +28,9 @@ async function fillValidForm(user) {
   await user.type(screen.getByLabelText(/first name/i), "Ericka");
   await user.type(screen.getByLabelText(/last name/i), "James");
   await user.type(screen.getByLabelText(/username/i), "patchuser");
-  await user.type(
-    screen.getByLabelText(/email address/i),
-    "user@example.com"
-  );
-  await user.type(
-    screen.getByLabelText(/^password$/i),
-    "S3cure!Pass"
-  );
-  await user.type(
-    screen.getByLabelText(/confirm password/i),
-    "S3cure!Pass"
-  );
+  await user.type(screen.getByLabelText(/email address/i), "user@example.com");
+  await user.type(screen.getByLabelText(/^password$/i), "S3cure!Pass");
+  await user.type(screen.getByLabelText(/confirm password/i), "S3cure!Pass");
 }
 
 describe("Signup", () => {
@@ -68,13 +59,12 @@ describe("Signup", () => {
   it("renders the shared auth header", () => {
     renderSignup();
 
-    expect(
-      screen.getByRole("link", { name: "PatchWork" })
-    ).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "PatchWork" })).toHaveAttribute(
+      "href",
+      "/"
+    );
 
-    expect(
-      screen.getByRole("button", { name: /back/i })
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /back/i })).toBeInTheDocument();
 
     const authNavigation = screen.getByRole("navigation", {
       name: /authentication navigation/i,
@@ -106,23 +96,16 @@ describe("Signup", () => {
       "user@example.com"
     );
 
-    await user.type(
-      screen.getByLabelText(/^password$/i),
-      "S3cure!Pass"
-    );
+    await user.type(screen.getByLabelText(/^password$/i), "S3cure!Pass");
 
     await user.type(
       screen.getByLabelText(/confirm password/i),
       "Different123!"
     );
 
-    await user.click(
-      screen.getByRole("button", { name: /create account/i })
-    );
+    await user.click(screen.getByRole("button", { name: /create account/i }));
 
-    expect(
-      screen.getByText(/passwords do not match/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument();
 
     expect(signUpMock).not.toHaveBeenCalled();
   });
@@ -140,19 +123,11 @@ describe("Signup", () => {
       "user@example.com"
     );
 
-    await user.type(
-      screen.getByLabelText(/^password$/i),
-      "patch"
-    );
+    await user.type(screen.getByLabelText(/^password$/i), "patch");
 
-    await user.type(
-      screen.getByLabelText(/confirm password/i),
-      "patch"
-    );
+    await user.type(screen.getByLabelText(/confirm password/i), "patch");
 
-    await user.click(
-      screen.getByRole("button", { name: /create account/i })
-    );
+    await user.click(screen.getByRole("button", { name: /create account/i }));
 
     expect(
       screen.getByText(/password must be at least 9 characters long/i)
@@ -174,39 +149,22 @@ describe("Signup", () => {
 
     renderSignup();
 
-    await user.type(
-      screen.getByLabelText(/first name/i),
-      "  Ericka  "
-    );
+    await user.type(screen.getByLabelText(/first name/i), "  Ericka  ");
 
-    await user.type(
-      screen.getByLabelText(/last name/i),
-      "  James  "
-    );
+    await user.type(screen.getByLabelText(/last name/i), "  James  ");
 
-    await user.type(
-      screen.getByLabelText(/username/i),
-      "  PatchUser  "
-    );
+    await user.type(screen.getByLabelText(/username/i), "  PatchUser  ");
 
     await user.type(
       screen.getByLabelText(/email address/i),
       "  USER@example.com  "
     );
 
-    await user.type(
-      screen.getByLabelText(/^password$/i),
-      "S3cure!Pass"
-    );
+    await user.type(screen.getByLabelText(/^password$/i), "S3cure!Pass");
 
-    await user.type(
-      screen.getByLabelText(/confirm password/i),
-      "S3cure!Pass"
-    );
+    await user.type(screen.getByLabelText(/confirm password/i), "S3cure!Pass");
 
-    await user.click(
-      screen.getByRole("button", { name: /create account/i })
-    );
+    await user.click(screen.getByRole("button", { name: /create account/i }));
 
     expect(signUpMock).toHaveBeenCalledWith({
       email: "user@example.com",
@@ -232,9 +190,7 @@ describe("Signup", () => {
 
     await fillValidForm(user);
 
-    await user.click(
-      screen.getByRole("button", { name: /create account/i })
-    );
+    await user.click(screen.getByRole("button", { name: /create account/i }));
 
     expect(
       await screen.findByText(
@@ -256,9 +212,7 @@ describe("Signup", () => {
 
     await fillValidForm(user);
 
-    await user.click(
-      screen.getByRole("button", { name: /create account/i })
-    );
+    await user.click(screen.getByRole("button", { name: /create account/i }));
 
     expect(
       await screen.findByText(/unable to create account/i)

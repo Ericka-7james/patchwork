@@ -23,31 +23,21 @@ export function validatePassword({
     errors.push("Password cannot be the same as your email address.");
   }
 
-  if (
-    normalizedUsername &&
-    normalizedPassword.includes(normalizedUsername)
-  ) {
+  if (normalizedUsername && normalizedPassword.includes(normalizedUsername)) {
     errors.push("Password cannot contain your username.");
   }
 
-  if (
-    emailLocalPart &&
-    normalizedPassword.includes(emailLocalPart)
-  ) {
-    errors.push("Password cannot contain the first part of your email address.");
+  if (emailLocalPart && normalizedPassword.includes(emailLocalPart)) {
+    errors.push(
+      "Password cannot contain the first part of your email address."
+    );
   }
 
-  if (
-    normalizedFirstName &&
-    normalizedPassword.includes(normalizedFirstName)
-  ) {
+  if (normalizedFirstName && normalizedPassword.includes(normalizedFirstName)) {
     errors.push("Password cannot contain your first name.");
   }
 
-  if (
-    normalizedLastName &&
-    normalizedPassword.includes(normalizedLastName)
-  ) {
+  if (normalizedLastName && normalizedPassword.includes(normalizedLastName)) {
     errors.push("Password cannot contain your last name.");
   }
 

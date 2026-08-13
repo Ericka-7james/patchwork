@@ -11,21 +11,17 @@ function Home() {
       <main className="home-main">
         <section className="hero">
           <div className="hero-copy">
-            <p className="eyebrow">
-              Your experience. Better communicated.
-            </p>
+            <p className="eyebrow">Your experience. Better communicated.</p>
 
             <h1>
-              Build a stronger resume{" "}
-              <span> without making anything up.</span>
+              Build a stronger resume <span> without making anything up.</span>
             </h1>
 
             <div className="hero-details">
               <p className="hero-description">
-                PatchWork helps turn the work you have actually done into
-                clear, polished resume language that shows employers what you
-                bring to the table, without inventing skills, metrics, or
-                experience.
+                PatchWork helps turn the work you have actually done into clear,
+                polished resume language that shows employers what you bring to
+                the table, without inventing skills, metrics, or experience.
               </p>
 
               <div className="hero-actions">

@@ -1,10 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 
-function Header({
-  variant = "home",
-  showLogin = false,
-  showSignup = false,
-}) {
+function Header({ variant = "home", showLogin = false, showSignup = false }) {
   const navigate = useNavigate();
 
   return (
@@ -26,10 +22,7 @@ function Header({
       )}
 
       {variant === "auth" && (
-        <nav
-          className="nav-actions"
-          aria-label="Authentication navigation"
-        >
+        <nav className="nav-actions" aria-label="Authentication navigation">
           <button
             type="button"
             className="nav-link header-text-button"
@@ -39,19 +32,13 @@ function Header({
           </button>
 
           {showLogin && (
-            <Link
-              to="/login"
-              className="button button-small button-outline"
-            >
+            <Link to="/login" className="button button-small button-outline">
               Log in
             </Link>
           )}
 
           {showSignup && (
-            <Link
-              to="/signup"
-              className="button button-small button-outline"
-            >
+            <Link to="/signup" className="button button-small button-outline">
               Sign up
             </Link>
           )}

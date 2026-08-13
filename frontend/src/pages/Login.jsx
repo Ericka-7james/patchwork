@@ -135,10 +135,7 @@ function Login() {
           </form>
 
           <p className="login-switch">
-            New to PatchWork?{" "}
-            <Link to="/signup">
-              Create an account
-            </Link>
+            New to PatchWork? <Link to="/signup">Create an account</Link>
           </p>
         </section>
       </main>

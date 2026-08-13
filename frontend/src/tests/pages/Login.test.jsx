@@ -39,13 +39,9 @@ describe("Login", () => {
       })
     ).toBeInTheDocument();
 
-    expect(
-      screen.getByLabelText(/email or phone number/i)
-    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/email or phone number/i)).toBeInTheDocument();
 
-    expect(
-      screen.getByLabelText(/^password$/i)
-    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
 
     expect(
       screen.getByRole("button", { name: /sign in/i })
@@ -55,9 +51,10 @@ describe("Login", () => {
   it("renders signup and forgot password links", () => {
     renderLogin();
 
-    expect(
-      screen.getByRole("link", { name: /sign up/i })
-    ).toHaveAttribute("href", "/signup");
+    expect(screen.getByRole("link", { name: /sign up/i })).toHaveAttribute(
+      "href",
+      "/signup"
+    );
 
     expect(
       screen.getByRole("link", { name: /create an account/i })
@@ -90,14 +87,9 @@ describe("Login", () => {
       "  USER@example.com  "
     );
 
-    await user.type(
-      screen.getByLabelText(/^password$/i),
-      "S3cure!Pass"
-    );
+    await user.type(screen.getByLabelText(/^password$/i), "S3cure!Pass");
 
-    await user.click(
-      screen.getByRole("button", { name: /sign in/i })
-    );
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     expect(signInMock).toHaveBeenCalledWith({
       email: "user@example.com",
@@ -119,14 +111,9 @@ describe("Login", () => {
       "+15551234567"
     );
 
-    await user.type(
-      screen.getByLabelText(/^password$/i),
-      "S3cure!Pass"
-    );
+    await user.type(screen.getByLabelText(/^password$/i), "S3cure!Pass");
 
-    await user.click(
-      screen.getByRole("button", { name: /sign in/i })
-    );
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     expect(signInMock).toHaveBeenCalledWith({
       phone: "+15551234567",
@@ -148,14 +135,9 @@ describe("Login", () => {
       "user@example.com"
     );
 
-    await user.type(
-      screen.getByLabelText(/^password$/i),
-      "S3cure!Pass"
-    );
+    await user.type(screen.getByLabelText(/^password$/i), "S3cure!Pass");
 
-    await user.click(
-      screen.getByRole("button", { name: /sign in/i })
-    );
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     expect(
       await screen.findByText(/signed in successfully/i)
@@ -178,14 +160,9 @@ describe("Login", () => {
       "user@example.com"
     );
 
-    await user.type(
-      screen.getByLabelText(/^password$/i),
-      "WrongPassword123!"
-    );
+    await user.type(screen.getByLabelText(/^password$/i), "WrongPassword123!");
 
-    await user.click(
-      screen.getByRole("button", { name: /sign in/i })
-    );
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     expect(
       await screen.findByText(/invalid login credentials/i)
