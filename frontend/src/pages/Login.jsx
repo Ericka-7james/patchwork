@@ -1,22 +1,22 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import "./Login.css";
 
 function Login() {
+  const navigate = useNavigate();
+
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event) {
     event.preventDefault();
 
     setError("");
-    setMessage("");
 
     const normalizedIdentifier = identifier.trim();
 
@@ -49,7 +49,7 @@ function Login() {
       return;
     }
 
-    setMessage("Signed in successfully.");
+    navigate("/dashboard", { replace: true });
   }
 
   return (
@@ -116,12 +116,6 @@ function Login() {
             {error && (
               <div className="form-alert form-alert-error" role="alert">
                 {error}
-              </div>
-            )}
-
-            {message && (
-              <div className="form-alert form-alert-success" role="status">
-                {message}
               </div>
             )}
 
