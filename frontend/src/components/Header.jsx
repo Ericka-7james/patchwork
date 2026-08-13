@@ -1,6 +1,13 @@
 import { Link, useNavigate } from "react-router-dom";
 
-function Header({ variant = "home", showLogin = false, showSignup = false }) {
+function Header({
+  variant = "home",
+  showLogin = false,
+  showSignup = false,
+  username = "",
+  onLogout,
+  isLoggingOut = false,
+}) {
   const navigate = useNavigate();
 
   return (
@@ -47,9 +54,24 @@ function Header({ variant = "home", showLogin = false, showSignup = false }) {
 
       {variant === "app" && (
         <nav className="nav-actions" aria-label="App navigation">
+          {username && (
+            <span className="nav-link" aria-label={`Signed in as ${username}`}>
+              {username}
+            </span>
+          )}
+
           <Link to="/dashboard" className="nav-link">
             Dashboard
           </Link>
+
+          <button
+            type="button"
+            className="button button-small button-outline"
+            onClick={onLogout}
+            disabled={isLoggingOut}
+          >
+            {isLoggingOut ? "Logging out..." : "Log out"}
+          </button>
         </nav>
       )}
     </header>
