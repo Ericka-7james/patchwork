@@ -16,7 +16,7 @@ function Home() {
             </p>
 
             <h1>
-              Build a stronger resume
+              Build a stronger resume{" "}
               <span> without making anything up.</span>
             </h1>
 
