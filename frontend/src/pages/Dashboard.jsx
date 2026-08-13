@@ -7,7 +7,8 @@ import "./Dashboard.css";
 
 function Dashboard() {
   const navigate = useNavigate();
-  const { user, profile, isProfileLoading, signOut } = useAuth();
+  const { profile, isProfileLoading, signOut } = useAuth();
+
   const [logoutError, setLogoutError] = useState("");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -24,13 +25,13 @@ function Dashboard() {
     }
   }
 
-  const username = profile?.username;
+  const firstName = profile?.first_name;
 
   return (
     <div className="dashboard-page">
       <Header
         variant="app"
-        username={username}
+        firstName={firstName}
         onLogout={handleLogout}
         isLoggingOut={isLoggingOut}
       />
@@ -42,27 +43,37 @@ function Dashboard() {
           <h1>
             {isProfileLoading
               ? "Welcome back."
-              : `Welcome${username ? `, ${username}` : ""}.`}
+              : `Welcome${firstName ? `, ${firstName}` : ""}.`}
           </h1>
 
           <p>
-            Your PatchWork dashboard is ready. Resume upload and review tools
-            are coming next.
+            Upload your current resume and PatchWork will help you review,
+            organize, and strengthen how your experience is presented.
           </p>
         </section>
 
-        <section className="dashboard-card">
-          <p className="eyebrow">Account</p>
-          <h2>Dashboard setup complete</h2>
+        <section className="resume-upload-card">
+          <div className="resume-upload-heading">
+            <p className="eyebrow">Resume upload</p>
+            <h2>Start with your current resume</h2>
 
-          <p>
-            You are signed in
-            {user?.email ? ` as ${user.email}` : ""}.
-          </p>
+            <p>
+              Upload the resume you want to improve. You will review everything
+              PatchWork extracts before any updated resume is created.
+            </p>
+          </div>
 
-          <p>
-            The next stage will add your private resume upload workflow here.
-          </p>
+          <div className="resume-upload-placeholder">
+            <strong>Upload your resume</strong>
+
+            <span>PDF or DOCX</span>
+
+            <button type="button" className="button button-primary" disabled>
+              Choose resume
+            </button>
+
+            <small>Resume uploading will be connected in the next step.</small>
+          </div>
         </section>
 
         {logoutError && (

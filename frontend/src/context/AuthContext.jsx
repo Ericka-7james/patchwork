@@ -72,7 +72,7 @@ export function AuthProvider({ children }) {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, username")
+        .select("id, username, first_name")
         .eq("id", user.id)
         .single();
 
@@ -81,7 +81,12 @@ export function AuthProvider({ children }) {
       }
 
       if (error) {
-        console.error("Unable to load user profile:", error);
+        console.error("Unable to load user profile:", {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+        });
         setProfile(null);
       } else {
         setProfile(data);

@@ -79,6 +79,7 @@ describe("App routing", () => {
       data: {
         id: "user-123",
         username: "patchuser",
+        first_name: "Ericka",
       },
       error: null,
     });
@@ -101,16 +102,16 @@ describe("App routing", () => {
 
     expect(
       await screen.findByRole("heading", {
-        name: /welcome, patchuser/i,
+        name: /welcome, ericka/i,
       })
     ).toBeInTheDocument();
 
-    expect(
-      screen.getByLabelText(/signed in as patchuser/i)
-    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/signed in as ericka/i)).toBeInTheDocument();
 
     expect(fromMock).toHaveBeenCalledWith("profiles");
-    expect(selectMock).toHaveBeenCalledWith("id, username");
+
+    expect(selectMock).toHaveBeenCalledWith("id, username, first_name");
+
     expect(eqMock).toHaveBeenCalledWith("id", "user-123");
   });
 });

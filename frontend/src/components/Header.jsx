@@ -4,11 +4,14 @@ function Header({
   variant = "home",
   showLogin = false,
   showSignup = false,
-  username = "",
+  firstName = "",
   onLogout,
   isLoggingOut = false,
 }) {
   const navigate = useNavigate();
+
+  const displayName =
+    firstName.length > 8 ? `${firstName.slice(0, 8)}...` : firstName;
 
   return (
     <header className="navbar">
@@ -54,15 +57,15 @@ function Header({
 
       {variant === "app" && (
         <nav className="nav-actions" aria-label="App navigation">
-          {username && (
-            <span className="nav-link" aria-label={`Signed in as ${username}`}>
-              {username}
+          {displayName && (
+            <span
+              className="nav-link app-user-name"
+              aria-label={`Signed in as ${firstName}`}
+              title={firstName}
+            >
+              {displayName}
             </span>
           )}
-
-          <Link to="/dashboard" className="nav-link">
-            Dashboard
-          </Link>
 
           <button
             type="button"
