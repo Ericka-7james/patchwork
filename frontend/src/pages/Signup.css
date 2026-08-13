@@ -212,3 +212,11 @@
     grid-template-columns: 1fr;
   }
 }
+.auth-switch a {
+  color: var(--olive);
+  font-weight: 750;
+}
+
+.auth-switch a:hover {
+  color: var(--olive-dark);
+}

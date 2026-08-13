@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { validatePassword } from "../utils/validatePassword";
 import Header from "../components/Header";
@@ -85,7 +86,7 @@ function Signup() {
 
   return (
     <div className="auth-page">
-      <Header variant="auth" />
+      <Header variant="auth" showLogin />
 
       <main className="auth-main">
         <section className="auth-intro">
@@ -236,7 +237,8 @@ function Signup() {
           </form>
 
           <p className="auth-switch">
-            Already have an account? <span>Log in coming next.</span>
+            Already have an account?{" "}
+            <Link to="/login">Log in</Link>
           </p>
         </section>
       </main>
