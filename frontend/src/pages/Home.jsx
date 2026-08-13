@@ -1,25 +1,12 @@
 import { Link } from "react-router-dom";
+import Header from "../components/Header";
 import Footer from "../components/Footer";
 import "./Home.css";
 
 function Home() {
   return (
     <div className="site-shell">
-      <header className="navbar">
-        <Link to="/" className="brand">
-          Patch<span>Work</span>
-        </Link>
-
-        <nav className="nav-actions" aria-label="Main navigation">
-          <Link to="/signup" className="nav-link">
-            Sign up
-          </Link>
-
-          <Link to="/login" className="button button-small button-outline">
-            Log in
-          </Link>
-        </nav>
-      </header>
+      <Header variant="home" />
 
       <main className="home-main">
         <section className="hero">

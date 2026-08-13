@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { validatePassword } from "../utils/validatePassword";
-import "./Signup.css";
+import Header from "../components/Header";
 import Footer from "../components/Footer";
+import "./Signup.css";
 
 const initialFormData = {
   firstName: "",
@@ -85,15 +85,7 @@ function Signup() {
 
   return (
     <div className="auth-page">
-      <header className="auth-header">
-        <Link to="/" className="brand">
-          Patch<span>Work</span>
-        </Link>
-
-        <Link to="/" className="back-link">
-          Back home
-        </Link>
-      </header>
+      <Header variant="auth" />
 
       <main className="auth-main">
         <section className="auth-intro">
@@ -248,6 +240,7 @@ function Signup() {
           </p>
         </section>
       </main>
+
       <Footer />
     </div>
   );
