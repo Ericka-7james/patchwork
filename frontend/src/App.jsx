@@ -1,35 +1,15 @@
-import { useEffect, useState } from "react";
-
-// TEMP
-import { supabase } from "./lib/supabase";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Home from "./pages/Home";
+import Signup from "./pages/Signup";
 
 function App() {
-  const [backendStatus, setBackendStatus] = useState("Checking...");
-
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/health`)
-      .then((response) => response.json())
-      .then((data) => {
-        setBackendStatus(data.status);
-      })
-      .catch(() => {
-        setBackendStatus("Backend unavailable");
-      });
-
-    supabase.auth.getSession().then(({ error }) => {
-      if (error) {
-        console.error("Supabase connection error:", error);
-      } else {
-        console.log("Supabase connected");
-      }
-    });
-  }, []);
-
   return (
-    <main>
-      <h1>PatchWork</h1>
-      <p>Backend status: {backendStatus}</p>
-    </main>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/signup" element={<Signup />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
