@@ -21,14 +21,13 @@ npm --version
 python --version
 ```
 
-Clone the Repository
+## Clone the Repository
 
 ```
-git clone https://github.com/YOUR_GITHUB_ID/patchwork.git
-cd patchwork
+git clone https://github.com/Ericka-7james/patchwork.git
 ```
 
-Create a Feature Branch
+## Create a Feature Branch
 Do not work directly on `main`.
 
 ```
@@ -41,7 +40,7 @@ Example:
 git switch -c feature/resume-upload
 ```
 
-Frontend Setup
+## Frontend Setup
 
 ```
 cd frontend
@@ -62,7 +61,7 @@ Frontend:
 http://localhost:5173
 ```
 
-Backend Setup
+## Backend Setup
 Open a second terminal:
 
 ```
@@ -95,7 +94,7 @@ FastAPI docs:
 http://127.0.0.1:8000/docs
 ```
 
-Start the Project Later
+## Start the Project Later
 Frontend:
 
 ```
@@ -110,3 +109,5 @@ cd backend
 .\.venv\Scripts\Activate.ps1
 uvicorn app:app --reload
 ```
+
+###:)
