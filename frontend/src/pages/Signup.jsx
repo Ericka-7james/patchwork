@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase } from "../lib/supabase";
-import { validatePassword } from "../utils/validatePassword";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import "./Signup.css";
+import { SIGNUP_CONTENT } from "../content/pages/signupContent";
+import { supabase } from "../lib/supabase";
+import { validatePassword } from "../utils/validatePassword";
+import "./styles/Signup.css";
 
-const initialFormData = {
+const INITIAL_FORM_DATA = {
   firstName: "",
   lastName: "",
   username: "",
@@ -16,16 +17,27 @@ const initialFormData = {
 };
 
 function Signup() {
-  const [formData, setFormData] = useState(initialFormData);
+  const [formData, setFormData] = useState(INITIAL_FORM_DATA);
   const [errors, setErrors] = useState([]);
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const {
+    intro,
+    card,
+    fields,
+    passwordNote,
+    actions,
+    messages,
+    switchText,
+    routes,
+  } = SIGNUP_CONTENT;
+
   function handleChange(event) {
     const { name, value } = event.target;
 
-    setFormData((current) => ({
-      ...current,
+    setFormData((currentFormData) => ({
+      ...currentFormData,
       [name]: value,
     }));
   }
@@ -36,7 +48,7 @@ function Signup() {
     setErrors([]);
     setMessage("");
 
-    const trimmedData = {
+    const normalizedFormData = {
       ...formData,
       firstName: formData.firstName.trim(),
       lastName: formData.lastName.trim(),
@@ -44,28 +56,28 @@ function Signup() {
       email: formData.email.trim().toLowerCase(),
     };
 
-    if (trimmedData.password !== trimmedData.confirmPassword) {
-      setErrors(["Passwords do not match."]);
+    if (normalizedFormData.password !== normalizedFormData.confirmPassword) {
+      setErrors([messages.passwordMismatch]);
       return;
     }
 
-    const passwordCheck = validatePassword(trimmedData);
+    const passwordValidation = validatePassword(normalizedFormData);
 
-    if (!passwordCheck.isValid) {
-      setErrors(passwordCheck.errors);
+    if (!passwordValidation.isValid) {
+      setErrors(passwordValidation.errors);
       return;
     }
 
     setIsSubmitting(true);
 
     const { error } = await supabase.auth.signUp({
-      email: trimmedData.email,
-      password: trimmedData.password,
+      email: normalizedFormData.email,
+      password: normalizedFormData.password,
       options: {
         data: {
-          username: trimmedData.username,
-          first_name: trimmedData.firstName,
-          last_name: trimmedData.lastName,
+          username: normalizedFormData.username,
+          first_name: normalizedFormData.firstName,
+          last_name: normalizedFormData.lastName,
         },
       },
     });
@@ -77,11 +89,8 @@ function Signup() {
       return;
     }
 
-    setMessage(
-      "Your account was created. Check your email to confirm your address before signing in."
-    );
-
-    setFormData(initialFormData);
+    setMessage(messages.accountCreated);
+    setFormData(INITIAL_FORM_DATA);
   }
 
   return (
@@ -90,131 +99,120 @@ function Signup() {
 
       <main className="auth-main">
         <section className="auth-intro">
-          <p className="eyebrow">Start with what you already have.</p>
+          <p className="eyebrow">{intro.eyebrow}</p>
 
           <h1>
-            Build something stronger
-            <span> from something real.</span>
+            {intro.heading} <span>{intro.headingAccent}</span>
           </h1>
 
-          <p>
-            Create your PatchWork account and start improving the way your
-            experience is presented.
-          </p>
+          <p>{intro.description}</p>
 
           <div className="auth-principle">
-            <strong>PatchWork promise</strong>
-            <span>
-              We improve how your experience is communicated. We do not invent
-              experience for you.
-            </span>
+            <strong>{intro.principle.title}</strong>
+            <span>{intro.principle.description}</span>
           </div>
         </section>
 
         <section className="signup-card">
           <div className="signup-heading">
-            <p className="eyebrow">Create account</p>
-            <h2>Welcome to PatchWork</h2>
-            <p>
-              Email signup is available now. Phone authentication comes next.
-            </p>
+            <p className="eyebrow">{card.eyebrow}</p>
+            <h2>{card.heading}</h2>
+            <p>{card.description}</p>
           </div>
 
           <form className="signup-form" onSubmit={handleSubmit}>
             <div className="field-row">
               <label className="form-field">
-                <span>First name</span>
+                <span>{fields.firstName.label}</span>
                 <input
                   type="text"
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleChange}
-                  autoComplete="given-name"
-                  placeholder="First name"
+                  autoComplete={fields.firstName.autoComplete}
+                  placeholder={fields.firstName.placeholder}
                   required
                 />
               </label>
 
               <label className="form-field">
-                <span>Last name</span>
+                <span>{fields.lastName.label}</span>
                 <input
                   type="text"
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleChange}
-                  autoComplete="family-name"
-                  placeholder="Last name"
+                  autoComplete={fields.lastName.autoComplete}
+                  placeholder={fields.lastName.placeholder}
                   required
                 />
               </label>
             </div>
 
             <label className="form-field">
-              <span>Username</span>
+              <span>{fields.username.label}</span>
               <input
                 type="text"
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
-                autoComplete="username"
-                placeholder="yourusername"
-                minLength="3"
+                autoComplete={fields.username.autoComplete}
+                placeholder={fields.username.placeholder}
+                minLength={fields.username.minLength}
                 required
               />
             </label>
 
             <label className="form-field">
-              <span>Email address</span>
+              <span>{fields.email.label}</span>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                autoComplete="email"
-                placeholder="you@example.com"
+                autoComplete={fields.email.autoComplete}
+                placeholder={fields.email.placeholder}
                 required
               />
             </label>
 
             <label className="form-field">
-              <span>Password</span>
+              <span>{fields.password.label}</span>
               <input
                 type="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                autoComplete="new-password"
-                placeholder="9+ characters"
-                minLength="9"
+                autoComplete={fields.password.autoComplete}
+                placeholder={fields.password.placeholder}
+                minLength={fields.password.minLength}
                 required
               />
             </label>
 
             <label className="form-field">
-              <span>Confirm password</span>
+              <span>{fields.confirmPassword.label}</span>
               <input
                 type="password"
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                autoComplete="new-password"
-                placeholder="Enter it again"
-                minLength="9"
+                autoComplete={fields.confirmPassword.autoComplete}
+                placeholder={fields.confirmPassword.placeholder}
+                minLength={fields.confirmPassword.minLength}
                 required
               />
             </label>
 
             <div className="password-note">
-              <strong>Your password:</strong>
-              <span>
-                Must be at least 9 characters and cannot contain your username,
-                email name, first name, or last name.
-              </span>
+              <strong>{passwordNote.title}</strong>
+              <span>{passwordNote.description}</span>
             </div>
 
             {errors.length > 0 && (
               <div className="form-alert form-alert-error" role="alert">
-                <strong>Check a few things:</strong>
+                <strong>{messages.validationHeading}</strong>
+
                 <ul>
                   {errors.map((error) => (
                     <li key={error}>{error}</li>
@@ -234,12 +232,12 @@ function Signup() {
               type="submit"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Creating account..." : "Create account"}
+              {isSubmitting ? actions.creatingAccount : actions.createAccount}
             </button>
           </form>
 
           <p className="auth-switch">
-            Already have an account? <Link to="/login">Log in</Link>
+            {switchText} <Link to={routes.login}>{actions.logIn}</Link>
           </p>
         </section>
       </main>

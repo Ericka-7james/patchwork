@@ -1,9 +1,12 @@
 import { Link } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import "./Home.css";
+import { HOME_CONTENT } from "../content/pages/homeContent";
+import "./styles/Home.css";
 
 function Home() {
+  const { hero } = HOME_CONTENT;
+
   return (
     <div className="site-shell">
       <Header variant="home" />
@@ -11,22 +14,21 @@ function Home() {
       <main className="home-main">
         <section className="hero">
           <div className="hero-copy">
-            <p className="eyebrow">Your experience. Better communicated.</p>
+            <p className="eyebrow">{hero.eyebrow}</p>
 
             <h1>
-              Build a stronger resume <span> without making anything up.</span>
+              {hero.heading} <span>{hero.headingAccent}</span>
             </h1>
 
             <div className="hero-details">
-              <p className="hero-description">
-                PatchWork helps turn the work you have actually done into clear,
-                polished resume language that shows employers what you bring to
-                the table, without inventing skills, metrics, or experience.
-              </p>
+              <p className="hero-description">{hero.description}</p>
 
               <div className="hero-actions">
-                <Link to="/signup" className="button button-primary">
-                  Build my resume
+                <Link
+                  to={hero.primaryAction.route}
+                  className="button button-primary"
+                >
+                  {hero.primaryAction.label}
                 </Link>
               </div>
             </div>
@@ -54,9 +56,7 @@ function Home() {
                 <div className="resume-line resume-line-medium" />
               </div>
 
-              <div className="resume-badge">
-                Clearer. Stronger. Still yours.
-              </div>
+              <div className="resume-badge">{hero.badge}</div>
             </div>
           </div>
         </section>

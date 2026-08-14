@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import { DASHBOARD_CONTENT } from "../content/pages/dashboardContent";
 import { useAuth } from "../context/useAuth";
-import "./Dashboard.css";
+import "./styles/Dashboard.css";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -12,20 +13,25 @@ function Dashboard() {
   const [logoutError, setLogoutError] = useState("");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  const firstName = profile?.first_name;
+  const { intro, upload, errors, routes } = DASHBOARD_CONTENT;
+
   async function handleLogout() {
     setLogoutError("");
     setIsLoggingOut(true);
 
     try {
       await signOut();
-      navigate("/login", { replace: true });
+      navigate(routes.login, { replace: true });
     } catch (error) {
-      setLogoutError(error.message || "Unable to log out. Please try again.");
+      setLogoutError(error.message || errors.logoutFallback);
       setIsLoggingOut(false);
     }
   }
 
-  const firstName = profile?.first_name;
+  const greeting = isProfileLoading
+    ? intro.loadingGreeting
+    : `Welcome${firstName ? `, ${firstName}` : ""}`;
 
   return (
     <div className="dashboard-page">
@@ -38,41 +44,27 @@ function Dashboard() {
 
       <main className="dashboard-main">
         <section className="dashboard-intro">
-          <p className="eyebrow">Your workspace</p>
-
-          <h1>
-            {isProfileLoading
-              ? "Welcome back."
-              : `Welcome${firstName ? `, ${firstName}` : ""}.`}
-          </h1>
-
-          <p>
-            Upload your current resume and PatchWork will help you review,
-            organize, and strengthen how your experience is presented.
-          </p>
+          <p className="eyebrow">{intro.eyebrow}</p>
+          <h1>{greeting}</h1>
+          <p>{intro.description}</p>
         </section>
 
         <section className="resume-upload-card">
           <div className="resume-upload-heading">
-            <p className="eyebrow">Resume upload</p>
-            <h2>Start with your current resume</h2>
-
-            <p>
-              Upload the resume you want to improve. You will review everything
-              PatchWork extracts before any updated resume is created.
-            </p>
+            <p className="eyebrow">{upload.eyebrow}</p>
+            <h2>{upload.heading}</h2>
+            <p>{upload.description}</p>
           </div>
 
           <div className="resume-upload-placeholder">
-            <strong>Upload your resume</strong>
-
-            <span>PDF or DOCX</span>
+            <strong>{upload.placeholderTitle}</strong>
+            <span>{upload.acceptedFormats}</span>
 
             <button type="button" className="button button-primary" disabled>
-              Choose resume
+              {upload.buttonLabel}
             </button>
 
-            <small>Resume uploading will be connected in the next step.</small>
+            <small>{upload.placeholderMessage}</small>
           </div>
         </section>
 
