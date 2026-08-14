@@ -18,8 +18,8 @@
 }
 
 .hero h1 {
-  margin: 0;
   max-width: 680px;
+  margin: 0;
   font-size: clamp(2.8rem, 5vw, 5rem);
   line-height: 1;
   letter-spacing: -0.06em;
@@ -56,8 +56,8 @@
 .resume-card {
   width: min(350px, 88%);
   min-height: 420px;
-  border-radius: 26px;
   border: 1px solid rgba(85, 107, 47, 0.12);
+  border-radius: 26px;
   box-shadow: var(--shadow);
 }
 
@@ -70,7 +70,7 @@
 .resume-card-front {
   position: relative;
   padding: 36px;
-  background: white;
+  background: var(--surface);
   transform: rotate(-2deg);
 }
 
@@ -133,7 +133,6 @@
   font-weight: 800;
 }
 
-/* Hide resume illustration once space becomes limited */
 @media (max-width: 900px) {
   .hero {
     grid-template-columns: 1fr;
@@ -154,7 +153,6 @@
   }
 }
 
-/* Phones */
 @media (max-width: 600px) {
   .home-main {
     width: min(100% - 28px, 1180px);
@@ -172,11 +170,9 @@
 
   .hero-details {
     margin-top: 24px;
-    display: block;
   }
 
   .hero-description {
-    width: 100%;
     max-width: none;
     font-size: 0.94rem;
     line-height: 1.6;

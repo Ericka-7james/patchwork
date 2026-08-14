@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import Login from "../../pages/Login";
 
 const { signInMock } = vi.hoisted(() => ({
@@ -18,10 +18,22 @@ vi.mock("../../lib/supabase", () => ({
 
 function renderLogin() {
   render(
-    <MemoryRouter>
-      <Login />
+    <MemoryRouter initialEntries={["/login"]}>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/dashboard" element={<h1>Dashboard destination</h1>} />
+      </Routes>
     </MemoryRouter>
   );
+}
+
+async function fillLoginForm(
+  user,
+  { identifier = "user@example.com", password = "S3cure!Pass" } = {}
+) {
+  await user.type(screen.getByLabelText(/email or phone number/i), identifier);
+
+  await user.type(screen.getByLabelText(/^password$/i), password);
 }
 
 describe("Login", () => {
@@ -29,8 +41,15 @@ describe("Login", () => {
     signInMock.mockReset();
   });
 
-  it("renders the login form", () => {
+  it("renders the login page", () => {
     renderLogin();
+
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: /pick up where you left off/i,
+      })
+    ).toBeInTheDocument();
 
     expect(
       screen.getByRole("heading", {
@@ -40,7 +59,6 @@ describe("Login", () => {
     ).toBeInTheDocument();
 
     expect(screen.getByLabelText(/email or phone number/i)).toBeInTheDocument();
-
     expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
 
     expect(
@@ -82,12 +100,9 @@ describe("Login", () => {
 
     renderLogin();
 
-    await user.type(
-      screen.getByLabelText(/email or phone number/i),
-      "  USER@example.com  "
-    );
-
-    await user.type(screen.getByLabelText(/^password$/i), "S3cure!Pass");
+    await fillLoginForm(user, {
+      identifier: "  USER@example.com  ",
+    });
 
     await user.click(screen.getByRole("button", { name: /sign in/i }));
 
@@ -106,12 +121,9 @@ describe("Login", () => {
 
     renderLogin();
 
-    await user.type(
-      screen.getByLabelText(/email or phone number/i),
-      "+15551234567"
-    );
-
-    await user.type(screen.getByLabelText(/^password$/i), "S3cure!Pass");
+    await fillLoginForm(user, {
+      identifier: "+15551234567",
+    });
 
     await user.click(screen.getByRole("button", { name: /sign in/i }));
 
@@ -121,7 +133,7 @@ describe("Login", () => {
     });
   });
 
-  it("shows a success message after login", async () => {
+  it("redirects to the dashboard after successful login", async () => {
     const user = userEvent.setup();
 
     signInMock.mockResolvedValue({
@@ -129,18 +141,14 @@ describe("Login", () => {
     });
 
     renderLogin();
-
-    await user.type(
-      screen.getByLabelText(/email or phone number/i),
-      "user@example.com"
-    );
-
-    await user.type(screen.getByLabelText(/^password$/i), "S3cure!Pass");
+    await fillLoginForm(user);
 
     await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     expect(
-      await screen.findByText(/signed in successfully/i)
+      await screen.findByRole("heading", {
+        name: /dashboard destination/i,
+      })
     ).toBeInTheDocument();
   });
 
@@ -155,17 +163,39 @@ describe("Login", () => {
 
     renderLogin();
 
-    await user.type(
-      screen.getByLabelText(/email or phone number/i),
-      "user@example.com"
-    );
+    await fillLoginForm(user, {
+      password: "WrongPassword123!",
+    });
 
-    await user.type(screen.getByLabelText(/^password$/i), "WrongPassword123!");
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /invalid login credentials/i
+    );
+  });
+
+  it("does not redirect after a failed login", async () => {
+    const user = userEvent.setup();
+
+    signInMock.mockResolvedValue({
+      error: {
+        message: "Invalid login credentials",
+      },
+    });
+
+    renderLogin();
+    await fillLoginForm(user);
 
     await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     expect(
       await screen.findByText(/invalid login credentials/i)
     ).toBeInTheDocument();
+
+    expect(
+      screen.queryByRole("heading", {
+        name: /dashboard destination/i,
+      })
+    ).not.toBeInTheDocument();
   });
 });

@@ -34,65 +34,18 @@
 
 .login-card {
   padding: 34px;
-  border: 1px solid var(--border);
-  border-radius: 26px;
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: var(--shadow);
 }
 
 .login-heading {
   margin-bottom: 28px;
 }
 
-.login-heading h2 {
-  margin: 0;
-  font-size: 1.8rem;
-  letter-spacing: -0.04em;
-}
-
-.login-heading > p:last-child {
-  margin: 8px 0 0;
-  color: var(--text-soft);
-  font-size: 0.86rem;
-}
-
 .login-form {
-  display: grid;
   gap: 18px;
 }
 
-.login-field {
-  display: grid;
-  gap: 7px;
-}
-
-.login-field > span {
-  font-size: 0.82rem;
-  font-weight: 750;
-}
-
 .login-field input {
-  width: 100%;
   min-height: 50px;
-  padding: 0 14px;
-  border: 1px solid #ddd5c7;
-  border-radius: 12px;
-  outline: none;
-  background: #fffefa;
-  color: var(--text);
-
-  transition:
-    border-color 140ms ease,
-    box-shadow 140ms ease;
-}
-
-.login-field input::placeholder {
-  color: #aaa498;
-}
-
-.login-field input:focus {
-  border-color: var(--olive);
-  box-shadow: 0 0 0 4px rgba(85, 107, 47, 0.09);
 }
 
 .login-options {
