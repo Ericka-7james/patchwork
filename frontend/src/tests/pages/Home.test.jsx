@@ -15,10 +15,13 @@ describe("Home", () => {
   it("renders the PatchWork brand", () => {
     renderHome();
 
-    expect(screen.getByRole("link", { name: "PatchWork" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "PatchWork" })).toHaveAttribute(
+      "href",
+      "/"
+    );
   });
 
-  it("renders the main hero heading", () => {
+  it("renders the main hero content", () => {
     renderHome();
 
     expect(
@@ -27,10 +30,6 @@ describe("Home", () => {
         name: /build a stronger resume without making anything up/i,
       })
     ).toBeInTheDocument();
-  });
-
-  it("renders the product description", () => {
-    renderHome();
 
     expect(
       screen.getByText(
@@ -39,40 +38,29 @@ describe("Home", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders the build my resume call to action", () => {
+  it("renders the primary call to action", () => {
     renderHome();
 
-    const cta = screen.getByRole("link", {
-      name: /build my resume/i,
-    });
-
-    expect(cta).toBeInTheDocument();
-    expect(cta).toHaveAttribute("href", "/signup");
+    expect(
+      screen.getByRole("link", { name: /build my resume/i })
+    ).toHaveAttribute("href", "/signup");
   });
 
-  it("renders the signup navigation link", () => {
+  it("renders signup and login navigation", () => {
     renderHome();
 
-    const signupLink = screen.getByRole("link", {
-      name: /sign up/i,
-    });
+    expect(screen.getByRole("link", { name: /sign up/i })).toHaveAttribute(
+      "href",
+      "/signup"
+    );
 
-    expect(signupLink).toBeInTheDocument();
-    expect(signupLink).toHaveAttribute("href", "/signup");
+    expect(screen.getByRole("link", { name: /log in/i })).toHaveAttribute(
+      "href",
+      "/login"
+    );
   });
 
-  it("renders the login navigation link", () => {
-    renderHome();
-
-    const loginLink = screen.getByRole("link", {
-      name: /log in/i,
-    });
-
-    expect(loginLink).toBeInTheDocument();
-    expect(loginLink).toHaveAttribute("href", "/login");
-  });
-
-  it("renders the resume visual badge text", () => {
+  it("renders the resume visual badge", () => {
     renderHome();
 
     expect(
@@ -80,7 +68,7 @@ describe("Home", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders the footer copyright", () => {
+  it("renders the footer", () => {
     renderHome();
 
     expect(

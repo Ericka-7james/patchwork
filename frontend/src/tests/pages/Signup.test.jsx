@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
@@ -24,13 +24,23 @@ function renderSignup() {
   );
 }
 
-async function fillValidForm(user) {
-  await user.type(screen.getByLabelText(/first name/i), "Ericka");
-  await user.type(screen.getByLabelText(/last name/i), "James");
-  await user.type(screen.getByLabelText(/username/i), "patchuser");
-  await user.type(screen.getByLabelText(/email address/i), "user@example.com");
-  await user.type(screen.getByLabelText(/^password$/i), "S3cure!Pass");
-  await user.type(screen.getByLabelText(/confirm password/i), "S3cure!Pass");
+async function fillSignupForm(
+  user,
+  {
+    firstName = "Ericka",
+    lastName = "James",
+    username = "patchuser",
+    email = "user@example.com",
+    password = "S3cure!Pass",
+    confirmPassword = "S3cure!Pass",
+  } = {}
+) {
+  await user.type(screen.getByLabelText(/first name/i), firstName);
+  await user.type(screen.getByLabelText(/last name/i), lastName);
+  await user.type(screen.getByLabelText(/username/i), username);
+  await user.type(screen.getByLabelText(/email address/i), email);
+  await user.type(screen.getByLabelText(/^password$/i), password);
+  await user.type(screen.getByLabelText(/confirm password/i), confirmPassword);
 }
 
 describe("Signup", () => {
@@ -40,6 +50,13 @@ describe("Signup", () => {
 
   it("renders the signup form", () => {
     renderSignup();
+
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: /build something stronger from something real/i,
+      })
+    ).toBeInTheDocument();
 
     expect(
       screen.getByRole("heading", {
@@ -56,7 +73,7 @@ describe("Signup", () => {
     expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
   });
 
-  it("renders the shared auth header", () => {
+  it("renders shared authentication navigation", () => {
     renderSignup();
 
     expect(screen.getByRole("link", { name: "PatchWork" })).toHaveAttribute(
@@ -66,20 +83,22 @@ describe("Signup", () => {
 
     expect(screen.getByRole("button", { name: /back/i })).toBeInTheDocument();
 
-    const authNavigation = screen.getByRole("navigation", {
+    const navigation = screen.getByRole("navigation", {
       name: /authentication navigation/i,
     });
 
     expect(
-      within(authNavigation).getByRole("link", { name: /log in/i })
+      within(navigation).getByRole("link", { name: /log in/i })
     ).toHaveAttribute("href", "/login");
   });
 
-  it("renders the footer", () => {
+  it("renders the PatchWork promise", () => {
     renderSignup();
 
+    expect(screen.getByText(/patchwork promise/i)).toBeInTheDocument();
+
     expect(
-      screen.getByText(/© 2026 PatchWork · Ericka James/i)
+      screen.getByText(/we do not invent experience for you/i)
     ).toBeInTheDocument();
   });
 
@@ -88,24 +107,15 @@ describe("Signup", () => {
 
     renderSignup();
 
-    await user.type(screen.getByLabelText(/first name/i), "Ericka");
-    await user.type(screen.getByLabelText(/last name/i), "James");
-    await user.type(screen.getByLabelText(/username/i), "patchuser");
-    await user.type(
-      screen.getByLabelText(/email address/i),
-      "user@example.com"
-    );
-
-    await user.type(screen.getByLabelText(/^password$/i), "S3cure!Pass");
-
-    await user.type(
-      screen.getByLabelText(/confirm password/i),
-      "Different123!"
-    );
+    await fillSignupForm(user, {
+      confirmPassword: "Different123!",
+    });
 
     await user.click(screen.getByRole("button", { name: /create account/i }));
 
-    expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      /passwords do not match/i
+    );
 
     expect(signUpMock).not.toHaveBeenCalled();
   });
@@ -115,17 +125,11 @@ describe("Signup", () => {
 
     renderSignup();
 
-    await user.type(screen.getByLabelText(/first name/i), "Ericka");
-    await user.type(screen.getByLabelText(/last name/i), "James");
-    await user.type(screen.getByLabelText(/username/i), "patch");
-    await user.type(
-      screen.getByLabelText(/email address/i),
-      "user@example.com"
-    );
-
-    await user.type(screen.getByLabelText(/^password$/i), "patch");
-
-    await user.type(screen.getByLabelText(/confirm password/i), "patch");
+    await fillSignupForm(user, {
+      username: "patch",
+      password: "patch",
+      confirmPassword: "patch",
+    });
 
     await user.click(screen.getByRole("button", { name: /create account/i }));
 
@@ -149,20 +153,12 @@ describe("Signup", () => {
 
     renderSignup();
 
-    await user.type(screen.getByLabelText(/first name/i), "  Ericka  ");
-
-    await user.type(screen.getByLabelText(/last name/i), "  James  ");
-
-    await user.type(screen.getByLabelText(/username/i), "  PatchUser  ");
-
-    await user.type(
-      screen.getByLabelText(/email address/i),
-      "  USER@example.com  "
-    );
-
-    await user.type(screen.getByLabelText(/^password$/i), "S3cure!Pass");
-
-    await user.type(screen.getByLabelText(/confirm password/i), "S3cure!Pass");
+    await fillSignupForm(user, {
+      firstName: "  Ericka  ",
+      lastName: "  James  ",
+      username: "  PatchUser  ",
+      email: "  USER@example.com  ",
+    });
 
     await user.click(screen.getByRole("button", { name: /create account/i }));
 
@@ -179,7 +175,7 @@ describe("Signup", () => {
     });
   });
 
-  it("shows the confirmation message after successful signup", async () => {
+  it("shows confirmation after successful signup", async () => {
     const user = userEvent.setup();
 
     signUpMock.mockResolvedValue({
@@ -187,16 +183,35 @@ describe("Signup", () => {
     });
 
     renderSignup();
-
-    await fillValidForm(user);
+    await fillSignupForm(user);
 
     await user.click(screen.getByRole("button", { name: /create account/i }));
 
-    expect(
-      await screen.findByText(
-        /your account was created\. check your email to confirm your address before signing in/i
-      )
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      /your account was created\. check your email to confirm your address before signing in/i
+    );
+  });
+
+  it("clears the form after successful signup", async () => {
+    const user = userEvent.setup();
+
+    signUpMock.mockResolvedValue({
+      error: null,
+    });
+
+    renderSignup();
+    await fillSignupForm(user);
+
+    await user.click(screen.getByRole("button", { name: /create account/i }));
+
+    await screen.findByRole("status");
+
+    expect(screen.getByLabelText(/first name/i)).toHaveValue("");
+    expect(screen.getByLabelText(/last name/i)).toHaveValue("");
+    expect(screen.getByLabelText(/username/i)).toHaveValue("");
+    expect(screen.getByLabelText(/email address/i)).toHaveValue("");
+    expect(screen.getByLabelText(/^password$/i)).toHaveValue("");
+    expect(screen.getByLabelText(/confirm password/i)).toHaveValue("");
   });
 
   it("shows Supabase errors to the user", async () => {
@@ -209,13 +224,12 @@ describe("Signup", () => {
     });
 
     renderSignup();
-
-    await fillValidForm(user);
+    await fillSignupForm(user);
 
     await user.click(screen.getByRole("button", { name: /create account/i }));
 
-    expect(
-      await screen.findByText(/unable to create account/i)
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /unable to create account/i
+    );
   });
 });
