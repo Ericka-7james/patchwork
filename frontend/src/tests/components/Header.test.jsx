@@ -76,19 +76,18 @@ describe("Header", () => {
     expect(screen.getByLabelText(/signed in as ericka/i)).toBeInTheDocument();
   });
 
-  it("truncates long first names while preserving the full accessible name", () => {
+  it("preserves long first names for CSS truncation", () => {
     renderHeader({
       variant: "app",
       firstName: "Alexandria",
       onLogout: vi.fn(),
     });
 
-    expect(screen.getByText("Alexandr...")).toBeInTheDocument();
+    const userName = screen.getByLabelText(/signed in as alexandria/i);
 
-    expect(screen.getByLabelText(/signed in as alexandria/i)).toHaveAttribute(
-      "title",
-      "Alexandria"
-    );
+    expect(userName).toHaveTextContent("Alexandria");
+    expect(userName).toHaveAttribute("title", "Alexandria");
+    expect(userName).toHaveClass("app-user-name");
   });
 
   it("calls the logout handler", async () => {
