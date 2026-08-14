@@ -1,7 +1,14 @@
+import { COMPONENT_CONTENT } from "../common/componentContent";
+
 function Footer() {
+  const { brand, footer } = COMPONENT_CONTENT;
+
   return (
     <footer className="site-footer">
-      <p>© 2026 PatchWork · Ericka James</p>
+      <p>
+        © {footer.copyrightYear} {brand.firstPart}
+        {brand.secondPart} · {footer.owner}
+      </p>
     </footer>
   );
 }

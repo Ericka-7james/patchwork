@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
+import { COMPONENT_CONTENT } from "../common/componentContent";
 
 function Header({
   variant = "home",
@@ -10,57 +11,73 @@ function Header({
 }) {
   const navigate = useNavigate();
 
+  const { brand, header } = COMPONENT_CONTENT;
+  const { actions, navigationLabels, routes, signedInLabel } = header;
+
   const displayName =
     firstName.length > 8 ? `${firstName.slice(0, 8)}...` : firstName;
 
   return (
     <header className="navbar">
-      <Link to="/" className="brand">
-        Patch<span>Work</span>
+      <Link to={routes.home} className="brand">
+        {brand.firstPart}
+        <span>{brand.secondPart}</span>
       </Link>
 
       {variant === "home" && (
-        <nav className="nav-actions" aria-label="Main navigation">
-          <Link to="/signup" className="nav-link">
-            Sign up
+        <nav className="nav-actions" aria-label={navigationLabels.main}>
+          <Link to={routes.signup} className="nav-link">
+            {actions.signUp}
           </Link>
 
-          <Link to="/login" className="button button-small button-outline">
-            Log in
+          <Link
+            to={routes.login}
+            className="button button-small button-outline"
+          >
+            {actions.logIn}
           </Link>
         </nav>
       )}
 
       {variant === "auth" && (
-        <nav className="nav-actions" aria-label="Authentication navigation">
+        <nav
+          className="nav-actions"
+          aria-label={navigationLabels.authentication}
+        >
           <button
             type="button"
             className="nav-link header-text-button"
             onClick={() => navigate(-1)}
           >
-            Back
+            {actions.back}
           </button>
 
           {showLogin && (
-            <Link to="/login" className="button button-small button-outline">
-              Log in
+            <Link
+              to={routes.login}
+              className="button button-small button-outline"
+            >
+              {actions.logIn}
             </Link>
           )}
 
           {showSignup && (
-            <Link to="/signup" className="button button-small button-outline">
-              Sign up
+            <Link
+              to={routes.signup}
+              className="button button-small button-outline"
+            >
+              {actions.signUp}
             </Link>
           )}
         </nav>
       )}
 
       {variant === "app" && (
-        <nav className="nav-actions" aria-label="App navigation">
+        <nav className="nav-actions" aria-label={navigationLabels.app}>
           {displayName && (
             <span
               className="nav-link app-user-name"
-              aria-label={`Signed in as ${firstName}`}
+              aria-label={`${signedInLabel} ${firstName}`}
               title={firstName}
             >
               {displayName}
@@ -73,7 +90,7 @@ function Header({
             onClick={onLogout}
             disabled={isLoggingOut}
           >
-            {isLoggingOut ? "Logging out..." : "Log out"}
+            {isLoggingOut ? actions.loggingOut : actions.logOut}
           </button>
         </nav>
       )}
