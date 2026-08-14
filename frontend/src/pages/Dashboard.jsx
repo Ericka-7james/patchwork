@@ -100,7 +100,7 @@ function Dashboard() {
 
   const greeting = isProfileLoading
     ? intro.loadingGreeting
-    : `Welcome${firstName ? `, ${firstName}` : ""}`;
+    : `Welcome${firstName ? `, ${firstName}!` : "!"}`;
 
   return (
     <div className="site-shell">
