@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from "react-router-dom";
-import { COMPONENT_CONTENT } from "../common/componentContent";
+import { COMPONENT_CONTENT } from "../content/common/componentContent";
 import { useAuth } from "../context/useAuth";
 
 function ProtectedRoute() {

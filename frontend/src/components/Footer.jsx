@@ -1,4 +1,4 @@
-import { COMPONENT_CONTENT } from "../common/componentContent";
+import { COMPONENT_CONTENT } from "../content/common/componentContent";
 
 function Footer() {
   const { brand, footer } = COMPONENT_CONTENT;
