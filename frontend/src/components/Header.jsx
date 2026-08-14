@@ -14,9 +14,6 @@ function Header({
   const { brand, header } = COMPONENT_CONTENT;
   const { actions, navigationLabels, routes, signedInLabel } = header;
 
-  const displayName =
-    firstName.length > 8 ? `${firstName.slice(0, 8)}...` : firstName;
-
   return (
     <header className="navbar">
       <Link to={routes.home} className="brand">
@@ -74,13 +71,13 @@ function Header({
 
       {variant === "app" && (
         <nav className="nav-actions" aria-label={navigationLabels.app}>
-          {displayName && (
+          {firstName && (
             <span
               className="nav-link app-user-name"
               aria-label={`${signedInLabel} ${firstName}`}
               title={firstName}
             >
-              {displayName}
+              {firstName}
             </span>
           )}
 

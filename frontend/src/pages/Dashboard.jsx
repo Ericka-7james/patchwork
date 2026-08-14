@@ -34,7 +34,7 @@ function Dashboard() {
     : `Welcome${firstName ? `, ${firstName}` : ""}`;
 
   return (
-    <div className="dashboard-page">
+    <div className="site-shell">
       <Header
         variant="app"
         firstName={firstName}

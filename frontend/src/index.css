@@ -8,13 +8,9 @@
     "Segoe UI",
     sans-serif;
 
-  color: #29291f;
-  background: #fffaf1;
-
   --olive: #556b2f;
   --olive-dark: #405123;
   --brown: #8b4513;
-  --tan: #d2b48c;
   --yellow: #f0e68c;
   --cream: #ffe4b5;
 
@@ -84,8 +80,7 @@ a {
   flex-direction: column;
 }
 
-.navbar,
-.auth-header {
+.navbar {
   width: min(1180px, calc(100% - 40px));
   margin: 0 auto;
   min-height: 84px;
@@ -111,25 +106,20 @@ a {
   gap: 20px;
 }
 
-.nav-link,
-.back-link {
+.nav-link {
   color: var(--text-soft);
   font-weight: 650;
   transition: color 160ms ease;
 }
 
-.nav-link:hover,
-.back-link:hover {
+.nav-link:hover {
   color: var(--olive);
 }
 
 .header-text-button {
-  appearance: none;
-  -webkit-appearance: none;
   padding: 0;
   margin: 0;
   border: 0;
-  outline: 0;
   background: transparent;
   color: var(--text-soft);
   font-weight: 650;
@@ -149,8 +139,8 @@ a {
 .button {
   min-height: 48px;
   padding: 0 22px;
-  border-radius: 999px;
   border: 1px solid transparent;
+  border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -176,8 +166,8 @@ a {
 
 .button-outline {
   border-color: var(--olive);
-  color: var(--olive);
   background: transparent;
+  color: var(--olive);
 }
 
 .button-small {
@@ -220,22 +210,20 @@ a {
 
 @media (max-width: 600px) {
   .navbar,
-  .auth-header,
   .site-footer {
     width: min(100% - 28px, 1180px);
   }
 
-  .app-user-name {
-    max-width: 90px;
-    font-size: 0.9rem;
-  }
-
-  .navbar,
-  .auth-header {
+  .navbar {
     min-height: 72px;
   }
 
   .nav-actions {
     gap: 10px;
+  }
+
+  .app-user-name {
+    max-width: 90px;
+    font-size: 0.9rem;
   }
 }

@@ -5,6 +5,7 @@ import Footer from "../components/Footer";
 import { SIGNUP_CONTENT } from "../content/pages/signupContent";
 import { supabase } from "../lib/supabase";
 import { validatePassword } from "../utils/validatePassword";
+import "./styles/AuthShared.css";
 import "./styles/Signup.css";
 
 const INITIAL_FORM_DATA = {
