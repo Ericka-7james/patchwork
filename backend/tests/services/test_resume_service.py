@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, call, patch
 
 import httpx
 import pytest
@@ -10,6 +10,7 @@ from backend.services.resume_service import (
     build_resume_storage_path,
     download_resume_file,
     get_resume_by_id,
+    update_resume_parse_state,
 )
 
 USER_ID = "7af37c73-f11c-4405-a800-430030e4bf4f"
@@ -133,7 +134,9 @@ def test_build_resume_storage_path():
         resume_id=RESUME_ID,
     )
 
-    assert storage_path == f"{USER_ID}/{RESUME_ID}/original"
+    assert storage_path == (
+        f"{USER_ID}/{RESUME_ID}/original"
+    )
 
 
 @pytest.mark.asyncio
@@ -227,7 +230,79 @@ async def test_download_resume_file_raises_when_storage_denies_access():
             )
 
 
-def test_parse_endpoint_authorizes_owned_resume():
+@pytest.mark.asyncio
+async def test_update_resume_parse_state_updates_resume_row():
+    parsed_data = {
+        "name": "Ericka James",
+        "skills": {
+            "Languages": [
+                "Python",
+                "Java",
+            ],
+        },
+    }
+
+    def handler(request: httpx.Request):
+        assert request.method == "PATCH"
+
+        assert request.url.path == (
+            "/rest/v1/resumes"
+        )
+
+        assert request.url.params["id"] == (
+            f"eq.{RESUME_ID}"
+        )
+
+        assert request.headers["authorization"] == (
+            "Bearer test-token"
+        )
+
+        assert request.headers["apikey"] == (
+            "test-publishable-key"
+        )
+
+        assert request.headers["prefer"] == (
+            "return=minimal"
+        )
+
+        assert request.read()
+
+        return httpx.Response(
+            status_code=204,
+        )
+
+    transport = httpx.MockTransport(handler)
+
+    async_client = httpx.AsyncClient(
+        transport=transport,
+    )
+
+    with (
+        patch(
+            "backend.services.resume_service.SUPABASE_URL",
+            "https://example.supabase.co",
+        ),
+        patch(
+            "backend.services.resume_service.get_supabase_headers",
+            return_value={
+                "apikey": "test-publishable-key",
+                "Authorization": "Bearer test-token",
+            },
+        ),
+        patch(
+            "backend.services.resume_service.httpx.AsyncClient",
+            return_value=async_client,
+        ),
+    ):
+        await update_resume_parse_state(
+            access_token="test-token",
+            resume_id=RESUME_ID,
+            status="parsed",
+            parsed_data=parsed_data,
+        )
+
+
+def test_parse_endpoint_parses_owned_resume():
     resume = {
         "id": RESUME_ID,
         "user_id": USER_ID,
@@ -236,10 +311,58 @@ def test_parse_endpoint_authorizes_owned_resume():
         "status": "uploaded",
     }
 
-    with patch(
-        "backend.app.get_resume_by_id",
-        new=AsyncMock(return_value=resume),
-    ) as get_resume_mock:
+    file_bytes = b"%PDF-resume"
+
+    extracted_text = (
+        "Ericka James\n"
+        "ericka@example.com\n"
+        "SKILLS\n"
+        "Languages: Python, Java"
+    )
+
+    parsed_data = {
+        "name": "Ericka James",
+        "contact": "ericka@example.com",
+        "summary": "",
+        "core_competencies": [],
+        "education": [],
+        "experience": [],
+        "projects": [],
+        "certifications": [],
+        "skills": {
+            "Languages": [
+                "Python",
+                "Java",
+            ],
+        },
+    }
+
+    with (
+        patch(
+            "backend.app.get_resume_by_id",
+            new=AsyncMock(
+                return_value=resume
+            ),
+        ) as get_resume_mock,
+        patch(
+            "backend.app.update_resume_parse_state",
+            new=AsyncMock(),
+        ) as update_state_mock,
+        patch(
+            "backend.app.download_resume_file",
+            new=AsyncMock(
+                return_value=file_bytes
+            ),
+        ) as download_mock,
+        patch(
+            "backend.app.extract_resume_text",
+            return_value=extracted_text,
+        ) as extract_mock,
+        patch(
+            "backend.app.parse_resume_structure",
+            return_value=parsed_data,
+        ) as structure_mock,
+    ):
         response = client.post(
             f"/api/resumes/{RESUME_ID}/parse",
             headers={
@@ -248,9 +371,11 @@ def test_parse_endpoint_authorizes_owned_resume():
         )
 
     assert response.status_code == 200
+
     assert response.json() == {
         "resume_id": RESUME_ID,
-        "status": "authorized",
+        "status": "parsed",
+        "parsed_data": parsed_data,
     }
 
     get_resume_mock.assert_awaited_once_with(
@@ -258,11 +383,103 @@ def test_parse_endpoint_authorizes_owned_resume():
         resume_id=RESUME_ID,
     )
 
+    download_mock.assert_awaited_once_with(
+        access_token="valid-token",
+        user_id=USER_ID,
+        resume_id=RESUME_ID,
+    )
+
+    extract_mock.assert_called_once_with(
+        file_bytes=file_bytes,
+        mime_type="application/pdf",
+    )
+
+    structure_mock.assert_called_once_with(
+        extracted_text
+    )
+
+    assert update_state_mock.await_args_list == [
+        call(
+            access_token="valid-token",
+            resume_id=RESUME_ID,
+            status="parsing",
+        ),
+        call(
+            access_token="valid-token",
+            resume_id=RESUME_ID,
+            status="parsed",
+            parsed_data=parsed_data,
+        ),
+    ]
+
+
+def test_parse_endpoint_marks_resume_error_when_parsing_fails():
+    resume = {
+        "id": RESUME_ID,
+        "user_id": USER_ID,
+        "original_filename": "resume.pdf",
+        "mime_type": "application/pdf",
+        "status": "uploaded",
+    }
+
+    with (
+        patch(
+            "backend.app.get_resume_by_id",
+            new=AsyncMock(
+                return_value=resume
+            ),
+        ),
+        patch(
+            "backend.app.update_resume_parse_state",
+            new=AsyncMock(),
+        ) as update_state_mock,
+        patch(
+            "backend.app.download_resume_file",
+            new=AsyncMock(
+                return_value=b"%PDF-test"
+            ),
+        ),
+        patch(
+            "backend.app.extract_resume_text",
+            side_effect=ValueError(
+                "Unable to extract resume"
+            ),
+        ),
+    ):
+        response = client.post(
+            f"/api/resumes/{RESUME_ID}/parse",
+            headers={
+                "Authorization": "Bearer valid-token",
+            },
+        )
+
+    assert response.status_code == 500
+
+    assert response.json() == {
+        "detail": "Unable to parse resume.",
+    }
+
+    assert update_state_mock.await_args_list == [
+        call(
+            access_token="valid-token",
+            resume_id=RESUME_ID,
+            status="parsing",
+        ),
+        call(
+            access_token="valid-token",
+            resume_id=RESUME_ID,
+            status="error",
+            parse_error="Unable to extract resume",
+        ),
+    ]
+
 
 def test_parse_endpoint_returns_404_for_inaccessible_resume():
     with patch(
         "backend.app.get_resume_by_id",
-        new=AsyncMock(return_value=None),
+        new=AsyncMock(
+            return_value=None
+        ),
     ):
         response = client.post(
             f"/api/resumes/{RESUME_ID}/parse",
@@ -272,6 +489,7 @@ def test_parse_endpoint_returns_404_for_inaccessible_resume():
         )
 
     assert response.status_code == 404
+
     assert response.json() == {
         "detail": "Resume not found.",
     }
@@ -288,7 +506,9 @@ def test_parse_endpoint_rejects_mismatched_owner():
 
     with patch(
         "backend.app.get_resume_by_id",
-        new=AsyncMock(return_value=resume),
+        new=AsyncMock(
+            return_value=resume
+        ),
     ):
         response = client.post(
             f"/api/resumes/{RESUME_ID}/parse",
@@ -298,6 +518,7 @@ def test_parse_endpoint_rejects_mismatched_owner():
         )
 
     assert response.status_code == 404
+
     assert response.json() == {
         "detail": "Resume not found.",
     }
@@ -309,6 +530,7 @@ def test_parse_endpoint_requires_authorization_header():
     )
 
     assert response.status_code == 401
+
     assert response.json() == {
         "detail": "Missing authorization token.",
     }
@@ -342,6 +564,9 @@ def test_parse_endpoint_handles_supabase_network_failure():
         )
 
     assert response.status_code == 502
+
     assert response.json() == {
-        "detail": "Unable to retrieve resume from Supabase.",
+        "detail": (
+            "Unable to retrieve resume from Supabase."
+        ),
     }
