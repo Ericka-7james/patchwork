@@ -2,8 +2,52 @@ import { supabase } from "../lib/supabase";
 
 const RESUME_BUCKET = "resume-originals";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
 function buildResumeStoragePath(userId, resumeId) {
   return `${userId}/${resumeId}/original`;
+}
+
+async function parseResume(resumeId) {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    throw new Error(sessionError.message || "Unable to verify your session.");
+  }
+
+  const accessToken = session?.access_token;
+
+  if (!accessToken) {
+    throw new Error("You must be signed in to parse a resume.");
+  }
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/resumes/${resumeId}/parse`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+
+  let result;
+
+  try {
+    result = await response.json();
+  } catch {
+    result = null;
+  }
+
+  if (!response.ok) {
+    throw new Error(result?.detail || "Unable to parse your resume.");
+  }
+
+  return result;
 }
 
 export async function uploadResume({ userId, file }) {
@@ -50,5 +94,11 @@ export async function uploadResume({ userId, file }) {
     throw new Error(uploadError.message || "Unable to upload your resume.");
   }
 
-  return resume;
+  const parseResult = await parseResume(resume.id);
+
+  return {
+    ...resume,
+    status: parseResult.status,
+    parsed_data: parseResult.parsed_data,
+  };
 }

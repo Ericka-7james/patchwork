@@ -18,7 +18,7 @@ export const DASHBOARD_CONTENT = {
     changeButtonLabel: "Choose a different resume",
     uploadButtonLabel: "Upload resume",
     uploadingButtonLabel: "Uploading...",
-    successMessage: "Resume uploaded successfully.",
+    successMessage: "Resume uploaded and processed successfully.",
   },
 
   errors: {

@@ -239,7 +239,7 @@ describe("Dashboard", () => {
     });
 
     expect(
-      await screen.findByText(/resume uploaded successfully/i)
+      await screen.findByText(/resume uploaded and processed successfully/i)
     ).toBeInTheDocument();
   });
 
@@ -287,7 +287,7 @@ describe("Dashboard", () => {
     });
 
     expect(
-      await screen.findByText(/resume uploaded successfully/i)
+      await screen.findByText(/resume uploaded and processed successfully/i)
     ).toBeInTheDocument();
 
     expect(
