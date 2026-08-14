@@ -2,19 +2,32 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import AuthContext from "./AuthContextBase";
 
+/**
+ * Provides Supabase authentication and profile state to the application.
+ *
+ * The provider initializes the current session, listens for authentication
+ * changes, loads the authenticated user's profile, and exposes logout
+ * functionality through the shared auth context.
+ *
+ * @param {object} props Component properties.
+ * @param {React.ReactNode} props.children Child components that need auth state.
+ * @returns {JSX.Element} The authentication context provider.
+ */
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProfileLoading, setIsProfileLoading] = useState(false);
 
+  const user = session?.user ?? null;
+
   useEffect(() => {
-    let isMounted = true;
+    let isActive = true;
 
     async function loadSession() {
       const { data, error } = await supabase.auth.getSession();
 
-      if (!isMounted) {
+      if (!isActive) {
         return;
       }
 
@@ -23,9 +36,11 @@ export function AuthProvider({ children }) {
         setSession(null);
         setProfile(null);
       } else {
-        setSession(data.session ?? null);
+        const currentSession = data.session ?? null;
 
-        if (!data.session?.user) {
+        setSession(currentSession);
+
+        if (!currentSession?.user) {
           setProfile(null);
         }
       }
@@ -38,7 +53,7 @@ export function AuthProvider({ children }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      if (!isMounted) {
+      if (!isActive) {
         return;
       }
 
@@ -53,21 +68,19 @@ export function AuthProvider({ children }) {
     });
 
     return () => {
-      isMounted = false;
+      isActive = false;
       subscription.unsubscribe();
     };
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
+    if (!user) {
+      return undefined;
+    }
+
+    let isActive = true;
 
     async function loadProfile() {
-      const user = session?.user;
-
-      if (!user) {
-        return;
-      }
-
       setIsProfileLoading(true);
 
       const { data, error } = await supabase
@@ -76,7 +89,7 @@ export function AuthProvider({ children }) {
         .eq("id", user.id)
         .single();
 
-      if (!isMounted) {
+      if (!isActive) {
         return;
       }
 
@@ -87,6 +100,7 @@ export function AuthProvider({ children }) {
           details: error.details,
           hint: error.hint,
         });
+
         setProfile(null);
       } else {
         setProfile(data);
@@ -98,9 +112,9 @@ export function AuthProvider({ children }) {
     loadProfile();
 
     return () => {
-      isMounted = false;
+      isActive = false;
     };
-  }, [session]);
+  }, [user]);
 
   async function signOut() {
     const { error } = await supabase.auth.signOut();
@@ -110,17 +124,19 @@ export function AuthProvider({ children }) {
     }
   }
 
-  const value = useMemo(
+  const contextValue = useMemo(
     () => ({
       session,
-      user: session?.user ?? null,
+      user,
       profile,
       isLoading,
       isProfileLoading,
       signOut,
     }),
-    [session, profile, isLoading, isProfileLoading]
+    [session, user, profile, isLoading, isProfileLoading]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
+  );
 }

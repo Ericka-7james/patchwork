@@ -83,7 +83,7 @@ describe("Header", () => {
       onLogout: vi.fn(),
     });
 
-    expect(screen.getByText("Alexand...")).toBeInTheDocument();
+    expect(screen.getByText("Alexandr...")).toBeInTheDocument();
 
     expect(screen.getByLabelText(/signed in as alexandria/i)).toHaveAttribute(
       "title",
