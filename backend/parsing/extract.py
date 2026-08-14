@@ -9,6 +9,10 @@ from backend.parsing.extractors.pdf import (
     PdfExtractionError,
     extract_pdf_text,
 )
+from backend.parsing.formatters.pdf import (
+    format_pdf_text,
+)
+
 
 PDF_MIME_TYPE = "application/pdf"
 
@@ -31,13 +35,27 @@ class UnsupportedResumeTypeError(Exception):
 
 
 def normalize_extracted_text(text: str) -> str:
-    text = unicodedata.normalize("NFC", text)
+    text = unicodedata.normalize(
+        "NFC",
+        text,
+    )
 
-    text = text.replace("\xa0", " ")
+    text = text.replace(
+        "\xa0",
+        " ",
+    )
 
-    text = ZERO_WIDTH_SEPARATORS.sub(" ", text)
+    text = ZERO_WIDTH_SEPARATORS.sub(
+        " ",
+        text,
+    )
 
-    text = INVISIBLE_FORMATTING_CHARACTERS.sub("", text)
+    text = (
+        INVISIBLE_FORMATTING_CHARACTERS.sub(
+            "",
+            text,
+        )
+    )
 
     normalized_lines = []
 
@@ -49,9 +67,13 @@ def normalize_extracted_text(text: str) -> str:
         ).strip()
 
         if cleaned_line:
-            normalized_lines.append(cleaned_line)
+            normalized_lines.append(
+                cleaned_line
+            )
 
-    return "\n".join(normalized_lines)
+    return "\n".join(
+        normalized_lines
+    )
 
 
 def extract_resume_text(
@@ -59,15 +81,32 @@ def extract_resume_text(
     mime_type: str,
 ) -> str:
     if mime_type == PDF_MIME_TYPE:
-        extracted_text = extract_pdf_text(file_bytes)
-    elif mime_type == DOCX_MIME_TYPE:
-        extracted_text = extract_docx_text(file_bytes)
-    else:
-        raise UnsupportedResumeTypeError(
-            "Only PDF and DOCX resumes are supported."
+        extracted_text = extract_pdf_text(
+            file_bytes
         )
 
-    return normalize_extracted_text(extracted_text)
+        normalized_text = (
+            normalize_extracted_text(
+                extracted_text
+            )
+        )
+
+        return format_pdf_text(
+            normalized_text
+        )
+
+    if mime_type == DOCX_MIME_TYPE:
+        extracted_text = extract_docx_text(
+            file_bytes
+        )
+
+        return normalize_extracted_text(
+            extracted_text
+        )
+
+    raise UnsupportedResumeTypeError(
+        "Only PDF and DOCX resumes are supported."
+    )
 
 
 __all__ = [
