@@ -16,12 +16,16 @@ export const DASHBOARD_CONTENT = {
     buttonLabel: "Choose resume",
     selectedLabel: "Selected resume",
     changeButtonLabel: "Choose a different resume",
+    uploadButtonLabel: "Upload resume",
+    uploadingButtonLabel: "Uploading...",
+    successMessage: "Resume uploaded successfully.",
   },
 
   errors: {
     logoutFallback: "Unable to log out. Please try again.",
     unsupportedResumeType: "Please choose a PDF or DOCX resume.",
     resumeTooLarge: "Your resume must be 10 MB or smaller.",
+    uploadFallback: "Unable to upload your resume. Please try again.",
   },
 
   routes: {

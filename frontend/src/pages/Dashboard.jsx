@@ -4,6 +4,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { DASHBOARD_CONTENT } from "../content/pages/dashboardContent";
 import { useAuth } from "../context/useAuth";
+import { uploadResume } from "../services/resumeService";
 import "./styles/Dashboard.css";
 
 const MAX_RESUME_SIZE_BYTES = 10 * 1024 * 1024;
@@ -15,14 +16,17 @@ const ACCEPTED_RESUME_TYPES = new Set([
 
 function Dashboard() {
   const navigate = useNavigate();
-  const { profile, isProfileLoading, signOut } = useAuth();
+  const { user, profile, isProfileLoading, signOut } = useAuth();
 
   const fileInputRef = useRef(null);
 
   const [logoutError, setLogoutError] = useState("");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
   const [selectedResume, setSelectedResume] = useState(null);
   const [resumeError, setResumeError] = useState("");
+  const [resumeSuccess, setResumeSuccess] = useState("");
+  const [isUploadingResume, setIsUploadingResume] = useState(false);
 
   const firstName = profile?.first_name;
   const { intro, upload, errors, routes } = DASHBOARD_CONTENT;
@@ -48,6 +52,7 @@ function Dashboard() {
     const file = event.target.files?.[0];
 
     setResumeError("");
+    setResumeSuccess("");
 
     if (!file) {
       return;
@@ -68,6 +73,29 @@ function Dashboard() {
     }
 
     setSelectedResume(file);
+  }
+
+  async function handleResumeUpload() {
+    if (!selectedResume || !user) {
+      return;
+    }
+
+    setResumeError("");
+    setResumeSuccess("");
+    setIsUploadingResume(true);
+
+    try {
+      await uploadResume({
+        userId: user.id,
+        file: selectedResume,
+      });
+
+      setResumeSuccess(upload.successMessage);
+    } catch (error) {
+      setResumeError(error.message || errors.uploadFallback);
+    } finally {
+      setIsUploadingResume(false);
+    }
   }
 
   const greeting = isProfileLoading
@@ -108,12 +136,14 @@ function Dashboard() {
               accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               onChange={handleResumeChange}
               aria-label="Resume file"
+              disabled={isUploadingResume}
             />
 
             <button
               type="button"
               className="button button-primary"
               onClick={handleChooseResume}
+              disabled={isUploadingResume}
             >
               {selectedResume ? upload.changeButtonLabel : upload.buttonLabel}
             </button>
@@ -122,6 +152,25 @@ function Dashboard() {
               <div className="resume-selected-file" role="status">
                 <span>{upload.selectedLabel}</span>
                 <strong>{selectedResume.name}</strong>
+              </div>
+            )}
+
+            {selectedResume && (
+              <button
+                type="button"
+                className="button button-outline resume-submit-button"
+                onClick={handleResumeUpload}
+                disabled={isUploadingResume}
+              >
+                {isUploadingResume
+                  ? upload.uploadingButtonLabel
+                  : upload.uploadButtonLabel}
+              </button>
+            )}
+
+            {resumeSuccess && (
+              <div className="resume-upload-success" role="status">
+                {resumeSuccess}
               </div>
             )}
 
