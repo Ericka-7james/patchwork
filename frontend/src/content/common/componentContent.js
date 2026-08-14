@@ -16,11 +16,13 @@ export const COMPONENT_CONTENT = {
       logOut: "Log out",
       loggingOut: "Logging out...",
       back: "Back",
+      profile: "Profile",
     },
     routes: {
       home: "/",
       signup: "/signup",
       login: "/login",
+      profile: "/profile",
     },
     signedInLabel: "Signed in as",
   },

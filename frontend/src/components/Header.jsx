@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { COMPONENT_CONTENT } from "../content/common/componentContent";
 
@@ -10,9 +11,18 @@ function Header({
   isLoggingOut = false,
 }) {
   const navigate = useNavigate();
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const { brand, header } = COMPONENT_CONTENT;
   const { actions, navigationLabels, routes, signedInLabel } = header;
+
+  function toggleUserMenu() {
+    setIsUserMenuOpen((currentValue) => !currentValue);
+  }
+
+  function closeUserMenu() {
+    setIsUserMenuOpen(false);
+  }
 
   return (
     <header className="navbar">
@@ -72,13 +82,39 @@ function Header({
       {variant === "app" && (
         <nav className="nav-actions" aria-label={navigationLabels.app}>
           {firstName && (
-            <span
-              className="nav-link app-user-name"
-              aria-label={`${signedInLabel} ${firstName}`}
-              title={firstName}
-            >
-              {firstName}
-            </span>
+            <div className="app-user-menu">
+              <button
+                type="button"
+                className="nav-link app-user-name app-user-menu-trigger"
+                aria-label={`${signedInLabel} ${firstName}`}
+                aria-expanded={isUserMenuOpen}
+                aria-haspopup="menu"
+                onClick={toggleUserMenu}
+                title={firstName}
+              >
+                <span>{firstName}</span>
+                <span className="app-user-menu-chevron" aria-hidden="true">
+                  ▾
+                </span>
+              </button>
+
+              {isUserMenuOpen && (
+                <div
+                  className="app-user-dropdown"
+                  role="menu"
+                  aria-label={`${firstName} account menu`}
+                >
+                  <Link
+                    to={routes.profile}
+                    className="app-user-dropdown-link"
+                    role="menuitem"
+                    onClick={closeUserMenu}
+                  >
+                    {actions.profile}
+                  </Link>
+                </div>
+              )}
+            </div>
           )}
 
           <button

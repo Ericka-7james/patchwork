@@ -50,6 +50,24 @@ async function parseResume(resumeId) {
   return result;
 }
 
+export async function getResumeByUserId(userId) {
+  if (!userId) {
+    throw new Error("You must be signed in to view your resume.");
+  }
+
+  const { data, error } = await supabase
+    .from("resumes")
+    .select("id, user_id, original_filename, status, parsed_data")
+    .eq("user_id", userId)
+    .single();
+
+  if (error) {
+    throw new Error(error.message || "Unable to load your resume.");
+  }
+
+  return data;
+}
+
 export async function uploadResume({ userId, file }) {
   if (!userId) {
     throw new Error("You must be signed in to upload a resume.");
