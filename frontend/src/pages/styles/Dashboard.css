@@ -70,24 +70,56 @@
   text-align: center;
 }
 
-.resume-upload-placeholder strong {
+.resume-upload-placeholder > strong {
   font-size: 1.1rem;
 }
 
-.resume-upload-placeholder span {
+.resume-upload-placeholder > span {
   margin-top: 6px;
   color: var(--text-soft);
   font-size: 0.88rem;
+}
+
+.resume-file-input {
+  display: none;
 }
 
 .resume-upload-placeholder .button {
   margin-top: 22px;
 }
 
-.resume-upload-placeholder small {
-  margin-top: 14px;
+.resume-selected-file {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.resume-selected-file span {
   color: var(--text-soft);
   font-size: 0.78rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.resume-selected-file strong {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: 0.95rem;
+}
+
+.resume-upload-error {
+  width: min(100%, 520px);
+  margin-top: 18px;
+  padding: 12px 16px;
+  border: 1px solid rgba(139, 69, 19, 0.24);
+  border-radius: 14px;
+  background: #fff1e6;
+  color: var(--brown);
+  font-size: 0.9rem;
+  font-weight: 650;
 }
 
 .dashboard-alert {
@@ -102,7 +134,7 @@
 
 @media (max-width: 600px) {
   .dashboard-main {
-    width: min(100% - 28px, 900px);
+    width: min(calc(100% - 28px), 900px);
     padding: 38px 0 56px;
   }
 

@@ -23,19 +23,23 @@ function renderDashboard() {
   );
 }
 
+function mockAuthenticatedUser() {
+  useAuthMock.mockReturnValue({
+    profile: {
+      first_name: "Ericka",
+    },
+    isProfileLoading: false,
+    signOut: vi.fn(),
+  });
+}
+
 describe("Dashboard", () => {
   beforeEach(() => {
     useAuthMock.mockReset();
   });
 
   it("renders the authenticated user's first name", () => {
-    useAuthMock.mockReturnValue({
-      profile: {
-        first_name: "Ericka",
-      },
-      isProfileLoading: false,
-      signOut: vi.fn(),
-    });
+    mockAuthenticatedUser();
 
     renderDashboard();
 
@@ -66,14 +70,8 @@ describe("Dashboard", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders the resume upload placeholder", () => {
-    useAuthMock.mockReturnValue({
-      profile: {
-        first_name: "Ericka",
-      },
-      isProfileLoading: false,
-      signOut: vi.fn(),
-    });
+  it("renders the resume upload controls", () => {
+    mockAuthenticatedUser();
 
     renderDashboard();
 
@@ -84,13 +82,94 @@ describe("Dashboard", () => {
       })
     ).toBeInTheDocument();
 
-    expect(screen.getByText(/pdf or docx/i)).toBeInTheDocument();
+    expect(screen.getByText(/pdf or docx, up to 10 mb/i)).toBeInTheDocument();
 
     expect(
       screen.getByRole("button", {
         name: /choose resume/i,
       })
-    ).toBeDisabled();
+    ).toBeEnabled();
+  });
+
+  it("accepts a PDF resume", async () => {
+    const user = userEvent.setup();
+
+    mockAuthenticatedUser();
+    renderDashboard();
+
+    const file = new File(["resume content"], "software-resume.pdf", {
+      type: "application/pdf",
+    });
+
+    await user.upload(screen.getByLabelText(/resume file/i), file);
+
+    expect(screen.getByText("software-resume.pdf")).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("button", {
+        name: /choose a different resume/i,
+      })
+    ).toBeInTheDocument();
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("accepts a DOCX resume", async () => {
+    const user = userEvent.setup();
+
+    mockAuthenticatedUser();
+    renderDashboard();
+
+    const file = new File(["resume content"], "software-resume.docx", {
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    });
+
+    await user.upload(screen.getByLabelText(/resume file/i), file);
+
+    expect(screen.getByText("software-resume.docx")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("rejects an unsupported resume type", async () => {
+    const user = userEvent.setup({
+      applyAccept: false,
+    });
+
+    mockAuthenticatedUser();
+    renderDashboard();
+
+    const file = new File(["not a resume"], "resume.txt", {
+      type: "text/plain",
+    });
+
+    await user.upload(screen.getByLabelText(/resume file/i), file);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /please choose a pdf or docx resume/i
+    );
+
+    expect(screen.queryByText("resume.txt")).not.toBeInTheDocument();
+  });
+
+  it("rejects a resume larger than 10 MB", async () => {
+    const user = userEvent.setup();
+
+    mockAuthenticatedUser();
+    renderDashboard();
+
+    const oversizedContent = new Uint8Array(10 * 1024 * 1024 + 1);
+
+    const file = new File([oversizedContent], "large-resume.pdf", {
+      type: "application/pdf",
+    });
+
+    await user.upload(screen.getByLabelText(/resume file/i), file);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /resume must be 10 mb or smaller/i
+    );
+
+    expect(screen.queryByText("large-resume.pdf")).not.toBeInTheDocument();
   });
 
   it("signs out and redirects to login", async () => {

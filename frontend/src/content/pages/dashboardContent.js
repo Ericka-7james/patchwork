@@ -12,13 +12,16 @@ export const DASHBOARD_CONTENT = {
     description:
       "Upload the resume you want to improve. You will review everything PatchWork extracts before any updated resume is created.",
     placeholderTitle: "Upload your resume",
-    acceptedFormats: "PDF or DOCX",
+    acceptedFormats: "PDF or DOCX, up to 10 MB",
     buttonLabel: "Choose resume",
-    placeholderMessage: "Resume uploading will be connected in the next step.",
+    selectedLabel: "Selected resume",
+    changeButtonLabel: "Choose a different resume",
   },
 
   errors: {
     logoutFallback: "Unable to log out. Please try again.",
+    unsupportedResumeType: "Please choose a PDF or DOCX resume.",
+    resumeTooLarge: "Your resume must be 10 MB or smaller.",
   },
 
   routes: {
