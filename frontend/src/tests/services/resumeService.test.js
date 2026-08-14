@@ -1,0 +1,445 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const {
+  fromMock,
+  tableUpsertMock,
+  selectMock,
+  singleMock,
+  storageFromMock,
+  storageUploadMock,
+  getSessionMock,
+} = vi.hoisted(() => ({
+  fromMock: vi.fn(),
+  tableUpsertMock: vi.fn(),
+  selectMock: vi.fn(),
+  singleMock: vi.fn(),
+  storageFromMock: vi.fn(),
+  storageUploadMock: vi.fn(),
+  getSessionMock: vi.fn(),
+}));
+
+vi.mock("../../lib/supabase", () => ({
+  supabase: {
+    from: fromMock,
+    storage: {
+      from: storageFromMock,
+    },
+    auth: {
+      getSession: getSessionMock,
+    },
+  },
+}));
+
+import { uploadResume } from "../../services/resumeService";
+
+function createPdfResume() {
+  return new File(["resume content"], "Ericka_James_Resume.pdf", {
+    type: "application/pdf",
+  });
+}
+
+function createDocxResume() {
+  return new File(["resume content"], "Ericka_James_Resume.docx", {
+    type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  });
+}
+
+function mockSuccessfulDatabaseUpsert({
+  resumeId = "resume-123",
+  userId = "user-123",
+  file = createPdfResume(),
+} = {}) {
+  const resume = {
+    id: resumeId,
+    user_id: userId,
+    original_filename: file.name,
+    mime_type: file.type,
+    status: "uploaded",
+  };
+
+  singleMock.mockResolvedValue({
+    data: resume,
+    error: null,
+  });
+
+  return resume;
+}
+
+function mockSuccessfulStorageUpload() {
+  storageUploadMock.mockResolvedValue({
+    data: {
+      path: "user-123/resume-123/original",
+    },
+    error: null,
+  });
+}
+
+function mockAuthenticatedSession() {
+  getSessionMock.mockResolvedValue({
+    data: {
+      session: {
+        access_token: "test-access-token",
+      },
+    },
+    error: null,
+  });
+}
+
+function mockSuccessfulParse() {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        resume_id: "resume-123",
+        status: "parsed",
+        parsed_data: {
+          name: "Ericka James",
+          skills: {
+            Languages: ["Python", "Java"],
+          },
+        },
+      }),
+    })
+  );
+}
+
+describe("uploadResume", () => {
+  beforeEach(() => {
+    fromMock.mockReset();
+    tableUpsertMock.mockReset();
+    selectMock.mockReset();
+    singleMock.mockReset();
+    storageFromMock.mockReset();
+    storageUploadMock.mockReset();
+    getSessionMock.mockReset();
+
+    vi.unstubAllGlobals();
+
+    fromMock.mockReturnValue({
+      upsert: tableUpsertMock,
+    });
+
+    tableUpsertMock.mockReturnValue({
+      select: selectMock,
+    });
+
+    selectMock.mockReturnValue({
+      single: singleMock,
+    });
+
+    storageFromMock.mockReturnValue({
+      upload: storageUploadMock,
+    });
+  });
+
+  it("rejects when no authenticated user id is provided", async () => {
+    const file = createPdfResume();
+
+    await expect(
+      uploadResume({
+        userId: "",
+        file,
+      })
+    ).rejects.toThrow("You must be signed in to upload a resume.");
+
+    expect(fromMock).not.toHaveBeenCalled();
+    expect(storageFromMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects when no resume file is provided", async () => {
+    await expect(
+      uploadResume({
+        userId: "user-123",
+        file: null,
+      })
+    ).rejects.toThrow("Please choose a resume to upload.");
+
+    expect(fromMock).not.toHaveBeenCalled();
+    expect(storageFromMock).not.toHaveBeenCalled();
+  });
+
+  it("uploads and parses a PDF resume", async () => {
+    const file = createPdfResume();
+
+    mockSuccessfulDatabaseUpsert({
+      file,
+    });
+
+    mockSuccessfulStorageUpload();
+    mockAuthenticatedSession();
+    mockSuccessfulParse();
+
+    const result = await uploadResume({
+      userId: "user-123",
+      file,
+    });
+
+    expect(fromMock).toHaveBeenCalledWith("resumes");
+
+    expect(tableUpsertMock).toHaveBeenCalledWith(
+      {
+        user_id: "user-123",
+        original_filename: "Ericka_James_Resume.pdf",
+        mime_type: "application/pdf",
+        status: "uploaded",
+        parsed_data: null,
+        parse_error: null,
+      },
+      {
+        onConflict: "user_id",
+      }
+    );
+
+    expect(storageUploadMock).toHaveBeenCalledWith(
+      "user-123/resume-123/original",
+      file,
+      {
+        contentType: "application/pdf",
+        upsert: true,
+      }
+    );
+
+    expect(getSessionMock).toHaveBeenCalledOnce();
+
+    expect(fetch).toHaveBeenCalledWith(
+      "http://localhost:8000/api/resumes/resume-123/parse",
+      {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer test-access-token",
+        },
+      }
+    );
+
+    expect(result).toEqual({
+      id: "resume-123",
+      user_id: "user-123",
+      original_filename: "Ericka_James_Resume.pdf",
+      mime_type: "application/pdf",
+      status: "parsed",
+      parsed_data: {
+        name: "Ericka James",
+        skills: {
+          Languages: ["Python", "Java"],
+        },
+      },
+    });
+  });
+
+  it("uploads a DOCX using the same deterministic storage path", async () => {
+    const file = createDocxResume();
+
+    mockSuccessfulDatabaseUpsert({
+      file,
+    });
+
+    mockSuccessfulStorageUpload();
+    mockAuthenticatedSession();
+    mockSuccessfulParse();
+
+    await uploadResume({
+      userId: "user-123",
+      file,
+    });
+
+    expect(storageUploadMock).toHaveBeenCalledWith(
+      "user-123/resume-123/original",
+      file,
+      {
+        contentType:
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        upsert: true,
+      }
+    );
+  });
+
+  it("clears previous parsed data when replacing a resume", async () => {
+    const file = createPdfResume();
+
+    mockSuccessfulDatabaseUpsert({
+      file,
+    });
+
+    mockSuccessfulStorageUpload();
+    mockAuthenticatedSession();
+    mockSuccessfulParse();
+
+    await uploadResume({
+      userId: "user-123",
+      file,
+    });
+
+    expect(tableUpsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "uploaded",
+        parsed_data: null,
+        parse_error: null,
+      }),
+      {
+        onConflict: "user_id",
+      }
+    );
+  });
+
+  it("does not upload when the database upsert fails", async () => {
+    singleMock.mockResolvedValue({
+      data: null,
+      error: {
+        message: "Database upsert failed",
+      },
+    });
+
+    const file = createPdfResume();
+
+    await expect(
+      uploadResume({
+        userId: "user-123",
+        file,
+      })
+    ).rejects.toThrow("Database upsert failed");
+
+    expect(storageUploadMock).not.toHaveBeenCalled();
+    expect(getSessionMock).not.toHaveBeenCalled();
+  });
+
+  it("uses the database fallback error", async () => {
+    singleMock.mockResolvedValue({
+      data: null,
+      error: {},
+    });
+
+    await expect(
+      uploadResume({
+        userId: "user-123",
+        file: createPdfResume(),
+      })
+    ).rejects.toThrow("Unable to save resume details.");
+  });
+
+  it("does not parse when Storage upload fails", async () => {
+    mockSuccessfulDatabaseUpsert();
+
+    storageUploadMock.mockResolvedValue({
+      data: null,
+      error: {
+        message: "Storage upload failed",
+      },
+    });
+
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    await expect(
+      uploadResume({
+        userId: "user-123",
+        file: createPdfResume(),
+      })
+    ).rejects.toThrow("Storage upload failed");
+
+    expect(getSessionMock).not.toHaveBeenCalled();
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+
+    fetchSpy.mockRestore();
+  });
+
+  it("uses the Storage fallback error", async () => {
+    mockSuccessfulDatabaseUpsert();
+
+    storageUploadMock.mockResolvedValue({
+      data: null,
+      error: {},
+    });
+
+    await expect(
+      uploadResume({
+        userId: "user-123",
+        file: createPdfResume(),
+      })
+    ).rejects.toThrow("Unable to upload your resume.");
+  });
+
+  it("rejects when the Supabase session is missing", async () => {
+    mockSuccessfulDatabaseUpsert();
+    mockSuccessfulStorageUpload();
+
+    getSessionMock.mockResolvedValue({
+      data: {
+        session: null,
+      },
+      error: null,
+    });
+
+    await expect(
+      uploadResume({
+        userId: "user-123",
+        file: createPdfResume(),
+      })
+    ).rejects.toThrow("You must be signed in to parse a resume.");
+  });
+
+  it("throws the session error", async () => {
+    mockSuccessfulDatabaseUpsert();
+    mockSuccessfulStorageUpload();
+
+    getSessionMock.mockResolvedValue({
+      data: {
+        session: null,
+      },
+      error: {
+        message: "Session failed",
+      },
+    });
+
+    await expect(
+      uploadResume({
+        userId: "user-123",
+        file: createPdfResume(),
+      })
+    ).rejects.toThrow("Session failed");
+  });
+
+  it("throws the backend parse error", async () => {
+    mockSuccessfulDatabaseUpsert();
+    mockSuccessfulStorageUpload();
+    mockAuthenticatedSession();
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        json: vi.fn().mockResolvedValue({
+          detail: "Unable to parse resume.",
+        }),
+      })
+    );
+
+    await expect(
+      uploadResume({
+        userId: "user-123",
+        file: createPdfResume(),
+      })
+    ).rejects.toThrow("Unable to parse resume.");
+  });
+
+  it("uses the parse fallback error when the backend returns no JSON", async () => {
+    mockSuccessfulDatabaseUpsert();
+    mockSuccessfulStorageUpload();
+    mockAuthenticatedSession();
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        json: vi.fn().mockRejectedValue(new Error("Invalid JSON")),
+      })
+    );
+
+    await expect(
+      uploadResume({
+        userId: "user-123",
+        file: createPdfResume(),
+      })
+    ).rejects.toThrow("Unable to parse your resume.");
+  });
+});
