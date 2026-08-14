@@ -4,6 +4,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { LOGIN_CONTENT } from "../content/pages/loginContent";
 import { supabase } from "../lib/supabase";
+import "./styles/AuthShared.css";
 import "./styles/Login.css";
 
 function Login() {
