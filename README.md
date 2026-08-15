@@ -110,4 +110,13 @@ cd C:\dev\Projects\patchwork
 uvicorn backend.app:app --reload
 ```
 
+## Fix Formatting or Lint Errors Before Commit/Push
+
+If Git blocks a commit or push because Prettier or ESLint checks fail, run the frontend checks manually first:
+
+```powershell
+cd frontend
+npm run check
+```
+
 ### :)
