@@ -148,7 +148,7 @@ def main() -> None:
     if len(sys.argv) != 2:
         print(
             "Usage: python -m "
-            "backend.scripts.inspect_word_boundaries "
+            "scripts.inspect_word_boundaries "
             "<file-path>"
         )
         raise SystemExit(1)

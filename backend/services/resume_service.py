@@ -1,6 +1,6 @@
 import httpx
 
-from backend.core.supabase_client import (
+from core.supabase_client import (
     SUPABASE_URL,
     get_supabase_headers,
 )

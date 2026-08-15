@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from backend.parsing.extract import (
+from parsing.extract import (
     DOCX_MIME_TYPE,
     PDF_MIME_TYPE,
     UnsupportedResumeTypeError,
@@ -42,7 +42,7 @@ def test_normalize_extracted_text_collapses_spaces_and_tabs():
 
 def test_extract_resume_text_routes_pdf():
     with patch(
-        "backend.parsing.extract.extract_pdf_text",
+        "parsing.extract.extract_pdf_text",
         return_value="Resume text",
     ) as extract_pdf_mock:
         result = extract_resume_text(
@@ -56,7 +56,7 @@ def test_extract_resume_text_routes_pdf():
 
 def test_extract_resume_text_routes_docx():
     with patch(
-        "backend.parsing.extract.extract_docx_text",
+        "parsing.extract.extract_docx_text",
         return_value="Resume text",
     ) as extract_docx_mock:
         result = extract_resume_text(
@@ -70,7 +70,7 @@ def test_extract_resume_text_routes_docx():
 
 def test_extract_resume_text_normalizes_extracted_content():
     with patch(
-        "backend.parsing.extract.extract_pdf_text",
+        "parsing.extract.extract_pdf_text",
         return_value="Python     React\n\nAWS",
     ):
         result = extract_resume_text(
@@ -90,6 +90,7 @@ def test_extract_resume_text_rejects_unsupported_mime_type():
             file_bytes=b"resume",
             mime_type="text/plain",
         )
+
 
 def test_normalize_extracted_text_converts_zero_width_space():
     text = (

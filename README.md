@@ -25,6 +25,7 @@ python --version
 
 ```
 git clone https://github.com/Ericka-7james/patchwork.git
+cd patchwork
 ```
 
 ## Create a Feature Branch
@@ -77,6 +78,11 @@ If needed:
 Copy-Item .env.example .env
 ```
 
+Run backend tests:
+```
+pytest
+```
+
 Start the backend:
 ```
 uvicorn app:app --reload
@@ -105,9 +111,9 @@ npm run dev
 Backend:
 
 ```
-cd C:\dev\Projects\patchwork
-.\backend\.venv\Scripts\Activate.ps1
-uvicorn backend.app:app --reload
+cd C:\dev\Projects\patchwork\backend
+.\.venv\Scripts\Activate.ps1
+uvicorn app:app --reload
 ```
 
 ## Fix Formatting or Lint Errors Before Commit/Push

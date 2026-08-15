@@ -1,4 +1,4 @@
-from backend.parsing.structure import (
+from parsing.structure import (
     parse_resume_structure,
 )
 

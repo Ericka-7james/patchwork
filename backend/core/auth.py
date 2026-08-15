@@ -1,7 +1,7 @@
 import httpx
 from fastapi import Header, HTTPException, status
 
-from backend.core.supabase_client import get_supabase_user
+from core.supabase_client import get_supabase_user
 
 
 def extract_bearer_token(authorization: str | None) -> str:

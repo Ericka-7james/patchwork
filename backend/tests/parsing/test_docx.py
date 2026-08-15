@@ -5,7 +5,7 @@ from zipfile import BadZipFile
 import pytest
 from docx import Document
 
-from backend.parsing.extractors.docx import (
+from parsing.extractors.docx import (
     DocxExtractionError,
     extract_docx_text,
 )
@@ -129,7 +129,7 @@ def test_extract_docx_text_rejects_empty_file():
 
 def test_extract_docx_text_rejects_malformed_document():
     with patch(
-        "backend.parsing.extractors.docx.Document",
+        "parsing.extractors.docx.Document",
         side_effect=BadZipFile("broken DOCX"),
     ):
         with pytest.raises(
