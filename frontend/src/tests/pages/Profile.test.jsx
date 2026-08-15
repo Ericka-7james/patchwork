@@ -55,6 +55,36 @@ function createResume(overrides = {}) {
           bullets: ["Built internal tools."],
         },
       ],
+      projects: [
+        {
+          heading: "DefenderFirewall",
+          description: "A modular Windows-focused defensive toolkit.",
+          dates: "2026",
+          bullets: [
+            "Built monitoring and scanning utilities.",
+            "Added event-driven automation.",
+          ],
+        },
+        {
+          title: "Jinx",
+          description: "A compact robotics platform.",
+          bullets: ["Integrated sensors and motor control."],
+        },
+        {
+          name: "PatchWork",
+          description: "A resume improvement platform.",
+          bullets: ["Built with React, FastAPI, and Supabase."],
+        },
+        {
+          project_name: "Inventory Automation",
+          bullets: ["Automated product updates."],
+        },
+        {
+          projectName: "Embedded Systems Lab",
+          bullets: ["Built Arduino prototypes."],
+        },
+      ],
+      certifications: ["CompTIA Tech+", "AWS Cloud Practitioner"],
     },
     ...overrides,
   };
@@ -116,6 +146,10 @@ function renderProfile() {
       <Routes>
         <Route path="/profile" element={<Profile />} />
         <Route path="/login" element={<h1>Login destination</h1>} />
+        <Route
+          path="/reset-password"
+          element={<h1>Reset password destination</h1>}
+        />
       </Routes>
     </MemoryRouter>
   );
@@ -166,7 +200,7 @@ describe("Profile", () => {
     expect(screen.getByText("Ericka_James_Resume.pdf")).toBeInTheDocument();
   });
 
-  it("renders skills, education, and work experience from parsed data", async () => {
+  it("renders skills, education, work experience, projects, and certifications", async () => {
     await loadProfilePage();
 
     expect(screen.getByText("Languages")).toBeInTheDocument();
@@ -184,6 +218,61 @@ describe("Profile", () => {
 
     expect(
       screen.getByText(/gwinnett county public schools — substitute teacher/i)
+    ).toBeInTheDocument();
+
+    expect(screen.getByText("DefenderFirewall")).toBeInTheDocument();
+    expect(screen.getByText("Jinx")).toBeInTheDocument();
+    expect(screen.getByText("PatchWork")).toBeInTheDocument();
+
+    expect(screen.getByText("CompTIA Tech+")).toBeInTheDocument();
+    expect(screen.getByText("AWS Cloud Practitioner")).toBeInTheDocument();
+  });
+
+  it("renders certifications beneath the skills section", async () => {
+    await loadProfilePage();
+
+    expect(
+      screen.getByText("Certifications", {
+        selector: "summary span",
+      })
+    ).toBeInTheDocument();
+
+    expect(screen.getByText("CompTIA Tech+")).toBeInTheDocument();
+    expect(screen.getByText("AWS Cloud Practitioner")).toBeInTheDocument();
+  });
+
+  it("renders the reset password account action", async () => {
+    await loadProfilePage();
+
+    expect(
+      screen.getByRole("heading", {
+        level: 2,
+        name: /reset your password/i,
+      })
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("link", {
+        name: /reset password/i,
+      })
+    ).toHaveAttribute("href", "/reset-password");
+  });
+
+  it("navigates to the reset password page", async () => {
+    const user = userEvent.setup();
+
+    await loadProfilePage();
+
+    await user.click(
+      screen.getByRole("link", {
+        name: /reset password/i,
+      })
+    );
+
+    expect(
+      await screen.findByRole("heading", {
+        name: /reset password destination/i,
+      })
     ).toBeInTheDocument();
   });
 
@@ -390,6 +479,105 @@ describe("Profile", () => {
     expect(exampleButton).toHaveAttribute("aria-expanded", "true");
   });
 
+  it("renders actual project names from supported project title fields", async () => {
+    await loadProfilePage();
+
+    expect(screen.getByText("DefenderFirewall")).toBeInTheDocument();
+    expect(screen.getByText("Jinx")).toBeInTheDocument();
+    expect(screen.getByText("PatchWork")).toBeInTheDocument();
+    expect(screen.getByText("Inventory Automation")).toBeInTheDocument();
+    expect(screen.getByText("Embedded Systems Lab")).toBeInTheDocument();
+
+    expect(screen.queryByText("Project 1")).not.toBeInTheDocument();
+    expect(screen.queryByText("Project 2")).not.toBeInTheDocument();
+  });
+
+  it("falls back to a numbered project title when no project name exists", async () => {
+    await loadProfilePage({
+      resume: createResume({
+        parsed_data: {
+          skills: {},
+          education: [],
+          experience: [],
+          certifications: [],
+          projects: [
+            {
+              description: "A project without a parsed title.",
+              bullets: ["Built something useful."],
+            },
+          ],
+        },
+      }),
+    });
+
+    expect(screen.getByText("Project 1")).toBeInTheDocument();
+  });
+
+  it("expands an individual project", async () => {
+    const user = userEvent.setup();
+
+    await loadProfilePage();
+
+    const defenderButton = screen.getByRole("button", {
+      name: /defenderfirewall/i,
+    });
+
+    expect(defenderButton).toHaveAttribute("aria-expanded", "false");
+
+    await user.click(defenderButton);
+
+    expect(defenderButton).toHaveAttribute("aria-expanded", "true");
+
+    expect(
+      screen.getByText(/a modular windows-focused defensive toolkit/i)
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText(/built monitoring and scanning utilities/i)
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText(/added event-driven automation/i)
+    ).toBeInTheDocument();
+  });
+
+  it("keeps no more than three projects expanded at once", async () => {
+    const user = userEvent.setup();
+
+    await loadProfilePage();
+
+    const defenderButton = screen.getByRole("button", {
+      name: /defenderfirewall/i,
+    });
+
+    const jinxButton = screen.getByRole("button", {
+      name: /^jinx/i,
+    });
+
+    const patchWorkButton = screen.getByRole("button", {
+      name: /^patchwork/i,
+    });
+
+    const inventoryButton = screen.getByRole("button", {
+      name: /inventory automation/i,
+    });
+
+    await user.click(defenderButton);
+    await user.click(jinxButton);
+    await user.click(patchWorkButton);
+
+    expect(defenderButton).toHaveAttribute("aria-expanded", "true");
+    expect(jinxButton).toHaveAttribute("aria-expanded", "true");
+    expect(patchWorkButton).toHaveAttribute("aria-expanded", "true");
+
+    await user.click(inventoryButton);
+
+    expect(defenderButton).toHaveAttribute("aria-expanded", "false");
+    expect(jinxButton).toHaveAttribute("aria-expanded", "true");
+    expect(patchWorkButton).toHaveAttribute("aria-expanded", "true");
+    expect(inventoryButton).toHaveAttribute("aria-expanded", "true");
+  });
+
   it("renders empty messages when parsed sections are missing", async () => {
     await loadProfilePage({
       resume: createResume({
@@ -397,6 +585,8 @@ describe("Profile", () => {
           skills: {},
           education: [],
           experience: [],
+          projects: [],
+          certifications: [],
         },
       }),
     });
@@ -411,6 +601,14 @@ describe("Profile", () => {
 
     expect(
       screen.getByText(/no work experience was found in this resume/i)
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText(/no projects were found in your uploaded resume/i)
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText(/no certifications were found in your uploaded resume/i)
     ).toBeInTheDocument();
   });
 
@@ -531,6 +729,12 @@ describe("Profile", () => {
     expect(
       screen.getByRole("button", {
         name: /the mattress & appliance spot/i,
+      })
+    ).toHaveAttribute("aria-expanded", "false");
+
+    expect(
+      screen.getByRole("button", {
+        name: /defenderfirewall/i,
       })
     ).toHaveAttribute("aria-expanded", "false");
   });

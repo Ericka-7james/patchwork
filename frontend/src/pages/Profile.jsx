@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { PROFILE_CONTENT } from "../content/pages/profileContent";
@@ -45,6 +45,66 @@ function toggleLimitedItem(currentItems, itemKey) {
   return [...currentItems.slice(1), itemKey];
 }
 
+function getProjectTitle(project, index) {
+  if (typeof project === "string") {
+    return project.trim() || `Project ${index + 1}`;
+  }
+
+  if (!project || typeof project !== "object") {
+    return `Project ${index + 1}`;
+  }
+
+  const possibleTitle =
+    project.name ??
+    project.title ??
+    project.heading ??
+    project.project_name ??
+    project.projectName;
+
+  if (typeof possibleTitle === "string" && possibleTitle.trim()) {
+    return possibleTitle.trim();
+  }
+
+  return `Project ${index + 1}`;
+}
+
+function getProjectDescription(project) {
+  if (!project || typeof project === "string") {
+    return "";
+  }
+
+  const description =
+    project.description ?? project.summary ?? project.subtitle ?? "";
+
+  return typeof description === "string" ? description.trim() : "";
+}
+
+function getProjectDates(project) {
+  if (!project || typeof project === "string") {
+    return "";
+  }
+
+  const dates = project.dates ?? project.date ?? project.duration ?? "";
+
+  return typeof dates === "string" ? dates.trim() : "";
+}
+
+function getProjectBullets(project) {
+  if (!project || typeof project === "string") {
+    return [];
+  }
+
+  if (Array.isArray(project.bullets)) {
+    return project.bullets;
+  }
+
+  if (Array.isArray(project.details)) {
+    return project.details;
+  }
+
+  return [];
+}
+
 function Profile() {
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
@@ -63,9 +123,16 @@ function Profile() {
   const [isExperienceOpen, setIsExperienceOpen] = useState(
     getDefaultSectionOpenState
   );
+  const [isProjectsOpen, setIsProjectsOpen] = useState(
+    getDefaultSectionOpenState
+  );
+  const [isCertificationsOpen, setIsCertificationsOpen] = useState(
+    getDefaultSectionOpenState
+  );
 
   const [openSkillCategories, setOpenSkillCategories] = useState([]);
   const [openExperienceItems, setOpenExperienceItems] = useState([]);
+  const [openProjectItems, setOpenProjectItems] = useState([]);
 
   const firstName = profile?.first_name;
 
@@ -94,6 +161,7 @@ function Profile() {
           );
 
           setOpenExperienceItems([]);
+          setOpenProjectItems([]);
         }
       } catch (error) {
         if (isActive) {
@@ -126,6 +194,8 @@ function Profile() {
       setIsSkillsOpen(shouldOpen);
       setIsEducationOpen(shouldOpen);
       setIsExperienceOpen(shouldOpen);
+      setIsProjectsOpen(shouldOpen);
+      setIsCertificationsOpen(shouldOpen);
 
       if (event.matches) {
         setOpenSkillCategories([]);
@@ -139,6 +209,7 @@ function Profile() {
       }
 
       setOpenExperienceItems([]);
+      setOpenProjectItems([]);
     }
 
     mediaQuery.addEventListener("change", handleViewportChange);
@@ -173,17 +244,37 @@ function Profile() {
     );
   }
 
+  function handleProjectToggle(itemKey) {
+    setOpenProjectItems((currentItems) =>
+      toggleLimitedItem(currentItems, itemKey)
+    );
+  }
+
   const parsedData = resume?.parsed_data ?? {};
+
   const skills = parsedData.skills ?? {};
   const education = parsedData.education ?? [];
   const experience = parsedData.experience ?? [];
+  const projects = parsedData.projects ?? [];
+  const certifications = parsedData.certifications ?? [];
 
-  const hasSkills = Object.keys(skills).length > 0;
-  const hasEducation = education.length > 0;
-  const hasExperience = experience.length > 0;
+  const hasSkills =
+    skills &&
+    typeof skills === "object" &&
+    !Array.isArray(skills) &&
+    Object.keys(skills).length > 0;
+
+  const hasEducation = Array.isArray(education) && education.length > 0;
+
+  const hasExperience = Array.isArray(experience) && experience.length > 0;
+
+  const hasProjects = Array.isArray(projects) && projects.length > 0;
+
+  const hasCertifications =
+    Array.isArray(certifications) && certifications.length > 0;
 
   return (
-    <div className="site-shell">
+    <div className="site-shell profile-page-shell">
       <Header
         variant="app"
         firstName={firstName}
@@ -249,6 +340,7 @@ function Profile() {
                               }
                             >
                               <span>{category}</span>
+
                               <span
                                 className="profile-nested-icon"
                                 aria-hidden="true"
@@ -260,14 +352,15 @@ function Profile() {
                             {isOpen && (
                               <div className="profile-nested-content">
                                 <div className="profile-skill-list">
-                                  {values.map((skill) => (
-                                    <span
-                                      className="profile-skill"
-                                      key={`${category}-${skill}`}
-                                    >
-                                      {skill}
-                                    </span>
-                                  ))}
+                                  {Array.isArray(values) &&
+                                    values.map((skill) => (
+                                      <span
+                                        className="profile-skill"
+                                        key={`${category}-${skill}`}
+                                      >
+                                        {skill}
+                                      </span>
+                                    ))}
                                 </div>
                               </div>
                             )}
@@ -282,6 +375,66 @@ function Profile() {
                   )}
                 </div>
               </details>
+
+              <details
+                className="profile-section"
+                open={isCertificationsOpen}
+                onToggle={(event) => {
+                  setIsCertificationsOpen(event.currentTarget.open);
+                }}
+              >
+                <summary>
+                  <span>Certifications</span>
+                </summary>
+
+                <div className="profile-section-content">
+                  {hasCertifications ? (
+                    <div className="profile-certification-list">
+                      {certifications.map((certification, index) => (
+                        <div
+                          className="profile-certification"
+                          key={`${certification}-${index}`}
+                        >
+                          <span
+                            className="profile-certification-mark"
+                            aria-hidden="true"
+                          >
+                            ✓
+                          </span>
+
+                          <span>{certification}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="profile-empty">
+                      No certifications were found in your uploaded resume.
+                    </p>
+                  )}
+                </div>
+              </details>
+
+              <section className="profile-password-card">
+                <div className="profile-password-copy">
+                  <span className="profile-password-label">
+                    Account security
+                  </span>
+
+                  <h2>Reset your password</h2>
+
+                  <p>
+                    Create a new password for your PatchWork account whenever
+                    you need to.
+                  </p>
+                </div>
+
+                <Link
+                  to="/reset-password"
+                  className="button button-small profile-password-button"
+                >
+                  Reset password
+                </Link>
+              </section>
             </div>
 
             <div className="profile-column">
@@ -298,11 +451,23 @@ function Profile() {
 
                 <div className="profile-section-content">
                   {hasEducation ? (
-                    <ul className="profile-education-list">
-                      {education.map((item) => (
-                        <li key={item}>{item}</li>
+                    <div className="profile-education-grid">
+                      {education.map((item, index) => (
+                        <article
+                          className="profile-education-card"
+                          key={`${item}-${index}`}
+                        >
+                          <div
+                            className="profile-education-marker"
+                            aria-hidden="true"
+                          >
+                            {String(index + 1).padStart(2, "0")}
+                          </div>
+
+                          <p>{item}</p>
+                        </article>
                       ))}
-                    </ul>
+                    </div>
                   ) : (
                     <p className="profile-empty">
                       {sections.education.emptyMessage}
@@ -341,6 +506,7 @@ function Profile() {
                               onClick={() => handleExperienceToggle(itemKey)}
                             >
                               <span>{item.heading}</span>
+
                               <span
                                 className="profile-nested-icon"
                                 aria-hidden="true"
@@ -367,6 +533,85 @@ function Profile() {
                   ) : (
                     <p className="profile-empty">
                       {sections.experience.emptyMessage}
+                    </p>
+                  )}
+                </div>
+              </details>
+
+              <details
+                className="profile-section"
+                open={isProjectsOpen}
+                onToggle={(event) => {
+                  setIsProjectsOpen(event.currentTarget.open);
+                }}
+              >
+                <summary>
+                  <span>Projects</span>
+                </summary>
+
+                <div className="profile-section-content">
+                  {hasProjects ? (
+                    <div className="profile-project-list">
+                      {projects.map((project, index) => {
+                        const title = getProjectTitle(project, index);
+                        const description = getProjectDescription(project);
+                        const dates = getProjectDates(project);
+                        const bullets = getProjectBullets(project);
+
+                        const itemKey = `${title}-${index}`;
+                        const isOpen = openProjectItems.includes(itemKey);
+
+                        return (
+                          <article
+                            className="profile-project-item"
+                            key={itemKey}
+                          >
+                            <button
+                              type="button"
+                              className="profile-project-trigger"
+                              aria-expanded={isOpen}
+                              onClick={() => handleProjectToggle(itemKey)}
+                            >
+                              <div className="profile-project-heading">
+                                <span>{title}</span>
+
+                                {dates && (
+                                  <small className="profile-project-dates">
+                                    {dates}
+                                  </small>
+                                )}
+                              </div>
+
+                              <span
+                                className="profile-nested-icon"
+                                aria-hidden="true"
+                              >
+                                {isOpen ? "−" : "+"}
+                              </span>
+                            </button>
+
+                            {isOpen && (
+                              <div className="profile-project-content">
+                                {description && <p>{description}</p>}
+
+                                {bullets.length > 0 && (
+                                  <ul>
+                                    {bullets.map((bullet, bulletIndex) => (
+                                      <li key={`${itemKey}-${bulletIndex}`}>
+                                        {bullet}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                            )}
+                          </article>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="profile-empty">
+                      No projects were found in your uploaded resume.
                     </p>
                   )}
                 </div>

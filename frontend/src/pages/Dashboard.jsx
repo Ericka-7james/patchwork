@@ -16,7 +16,9 @@ const ACCEPTED_RESUME_TYPES = new Set([
 
 function Dashboard() {
   const navigate = useNavigate();
-  const { user, profile, isProfileLoading, signOut } = useAuth();
+
+  const { user, profile, isProfileLoading, refreshResumeState, signOut } =
+    useAuth();
 
   const fileInputRef = useRef(null);
 
@@ -90,7 +92,11 @@ function Dashboard() {
         file: selectedResume,
       });
 
+      await refreshResumeState();
+
       setResumeSuccess(upload.successMessage);
+
+      navigate(routes.profile, { replace: true });
     } catch (error) {
       setResumeError(error.message || errors.uploadFallback);
     } finally {

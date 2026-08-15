@@ -30,5 +30,6 @@ export const DASHBOARD_CONTENT = {
 
   routes: {
     login: "/login",
+    profile: "/profile",
   },
 };

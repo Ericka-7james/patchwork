@@ -4,8 +4,9 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import Login from "../../pages/Login";
 
-const { signInMock } = vi.hoisted(() => ({
+const { signInMock, useAuthMock } = vi.hoisted(() => ({
   signInMock: vi.fn(),
+  useAuthMock: vi.fn(),
 }));
 
 vi.mock("../../lib/supabase", () => ({
@@ -14,6 +15,10 @@ vi.mock("../../lib/supabase", () => ({
       signInWithPassword: signInMock,
     },
   },
+}));
+
+vi.mock("../../context/useAuth", () => ({
+  useAuth: useAuthMock,
 }));
 
 function renderLogin() {
@@ -39,6 +44,11 @@ async function fillLoginForm(
 describe("Login", () => {
   beforeEach(() => {
     signInMock.mockReset();
+    useAuthMock.mockReset();
+
+    useAuthMock.mockReturnValue({
+      hasResume: false,
+    });
   });
 
   it("renders the login page", () => {

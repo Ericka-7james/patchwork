@@ -8,12 +8,16 @@ const {
   signOutMock,
   fromMock,
   unsubscribeMock,
+  profileSingleMock,
+  resumeMaybeSingleMock,
 } = vi.hoisted(() => ({
   getSessionMock: vi.fn(),
   onAuthStateChangeMock: vi.fn(),
   signOutMock: vi.fn(),
   fromMock: vi.fn(),
   unsubscribeMock: vi.fn(),
+  profileSingleMock: vi.fn(),
+  resumeMaybeSingleMock: vi.fn(),
 }));
 
 vi.mock("../lib/supabase", () => ({
@@ -47,6 +51,44 @@ describe("App routing", () => {
         },
       },
     });
+
+    profileSingleMock.mockResolvedValue({
+      data: {
+        id: "user-123",
+        username: "patchuser",
+        first_name: "Ericka",
+      },
+      error: null,
+    });
+
+    resumeMaybeSingleMock.mockResolvedValue({
+      data: null,
+      error: null,
+    });
+
+    fromMock.mockImplementation((table) => {
+      if (table === "profiles") {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: profileSingleMock,
+            })),
+          })),
+        };
+      }
+
+      if (table === "resumes") {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              maybeSingle: resumeMaybeSingleMock,
+            })),
+          })),
+        };
+      }
+
+      throw new Error(`Unexpected Supabase table: ${table}`);
+    });
   });
 
   it("redirects logged-out visitors away from the dashboard", async () => {
@@ -75,27 +117,6 @@ describe("App routing", () => {
       error: null,
     });
 
-    const singleMock = vi.fn().mockResolvedValue({
-      data: {
-        id: "user-123",
-        username: "patchuser",
-        first_name: "Ericka",
-      },
-      error: null,
-    });
-
-    const eqMock = vi.fn().mockReturnValue({
-      single: singleMock,
-    });
-
-    const selectMock = vi.fn().mockReturnValue({
-      eq: eqMock,
-    });
-
-    fromMock.mockReturnValue({
-      select: selectMock,
-    });
-
     window.history.pushState({}, "", "/dashboard");
 
     render(<App />);
@@ -109,9 +130,9 @@ describe("App routing", () => {
     expect(screen.getByLabelText(/signed in as ericka/i)).toBeInTheDocument();
 
     expect(fromMock).toHaveBeenCalledWith("profiles");
+    expect(fromMock).toHaveBeenCalledWith("resumes");
 
-    expect(selectMock).toHaveBeenCalledWith("id, username, first_name");
-
-    expect(eqMock).toHaveBeenCalledWith("id", "user-123");
+    expect(profileSingleMock).toHaveBeenCalledOnce();
+    expect(resumeMaybeSingleMock).toHaveBeenCalledOnce();
   });
 });
