@@ -23,6 +23,7 @@ export function AuthProvider({ children }) {
   const [isResumeStateLoading, setIsResumeStateLoading] = useState(false);
 
   const user = session?.user ?? null;
+  const userId = user?.id ?? null;
 
   useEffect(() => {
     let isActive = true;
@@ -124,10 +125,52 @@ export function AuthProvider({ children }) {
     };
   }, [user]);
 
-  const refreshResumeState = useCallback(async () => {
-    if (!user?.id) {
-      setHasResume(false);
+  useEffect(() => {
+    if (!userId) {
+      return undefined;
+    }
+
+    let isActive = true;
+
+    async function loadResumeState() {
+      setIsResumeStateLoading(true);
+
+      const { data, error } = await supabase
+        .from("resumes")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (!isActive) {
+        return;
+      }
+
+      if (error) {
+        console.error("Unable to load user resume state:", {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+        });
+
+        setHasResume(false);
+      } else {
+        setHasResume(Boolean(data?.id));
+      }
+
       setIsResumeStateLoading(false);
+    }
+
+    loadResumeState();
+
+    return () => {
+      isActive = false;
+    };
+  }, [userId]);
+
+  const refreshResumeState = useCallback(async () => {
+    if (!userId) {
+      setHasResume(false);
       return false;
     }
 
@@ -136,11 +179,11 @@ export function AuthProvider({ children }) {
     const { data, error } = await supabase
       .from("resumes")
       .select("id")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .maybeSingle();
 
     if (error) {
-      console.error("Unable to load user resume state:", {
+      console.error("Unable to refresh user resume state:", {
         message: error.message,
         code: error.code,
         details: error.details,
@@ -159,15 +202,7 @@ export function AuthProvider({ children }) {
     setIsResumeStateLoading(false);
 
     return resumeExists;
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (!user?.id) {
-      return;
-    }
-
-    refreshResumeState();
-  }, [user?.id, refreshResumeState]);
+  }, [userId]);
 
   async function signOut() {
     const { error } = await supabase.auth.signOut();
