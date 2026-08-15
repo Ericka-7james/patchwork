@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { COMPONENT_CONTENT } from "../content/common/componentContent";
+import { useAuth } from "../context/useAuth";
 
 function Header({
   variant = "home",
@@ -11,6 +12,8 @@ function Header({
   isLoggingOut = false,
 }) {
   const navigate = useNavigate();
+  const { hasResume } = useAuth();
+
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const { brand, header } = COMPONENT_CONTENT;
@@ -114,23 +117,27 @@ function Header({
                     {actions.dashboard}
                   </Link>
 
-                  <Link
-                    to={routes.profile}
-                    className="app-user-dropdown-link"
-                    role="menuitem"
-                    onClick={closeUserMenu}
-                  >
-                    {actions.profile}
-                  </Link>
+                  {hasResume && (
+                    <>
+                      <Link
+                        to={routes.profile}
+                        className="app-user-dropdown-link"
+                        role="menuitem"
+                        onClick={closeUserMenu}
+                      >
+                        {actions.profile}
+                      </Link>
 
-                  <Link
-                    to={routes.resumeGenerator}
-                    className="app-user-dropdown-link"
-                    role="menuitem"
-                    onClick={closeUserMenu}
-                  >
-                    {actions.resumeGenerator}
-                  </Link>
+                      <Link
+                        to={routes.resumeGenerator}
+                        className="app-user-dropdown-link"
+                        role="menuitem"
+                        onClick={closeUserMenu}
+                      >
+                        {actions.resumeGenerator}
+                      </Link>
+                    </>
+                  )}
                 </div>
               )}
             </div>
