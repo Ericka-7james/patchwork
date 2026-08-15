@@ -37,7 +37,7 @@ function renderResetPassword() {
     <MemoryRouter initialEntries={["/reset-password"]}>
       <Routes>
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/login" element={<h1>Login destination</h1>} />
+        <Route path="/profile" element={<h1>Profile destination</h1>} />
         <Route
           path="/forgot-password"
           element={<h1>Forgot password destination</h1>}
@@ -57,6 +57,18 @@ async function fillPasswords(
     screen.getByLabelText(/confirm new password/i),
     confirmPassword
   );
+}
+
+function mockReadyRecoverySession() {
+  getSessionMock.mockResolvedValue({
+    data: {
+      session: {
+        user: {
+          id: "user-123",
+        },
+      },
+    },
+  });
 }
 
 describe("ResetPassword", () => {
@@ -133,15 +145,7 @@ describe("ResetPassword", () => {
   });
 
   it("enables password updates when an existing recovery session is present", async () => {
-    getSessionMock.mockResolvedValue({
-      data: {
-        session: {
-          user: {
-            id: "user-123",
-          },
-        },
-      },
-    });
+    mockReadyRecoverySession();
 
     renderResetPassword();
 
@@ -231,15 +235,7 @@ describe("ResetPassword", () => {
   it("rejects passwords shorter than nine characters", async () => {
     const user = userEvent.setup();
 
-    getSessionMock.mockResolvedValue({
-      data: {
-        session: {
-          user: {
-            id: "user-123",
-          },
-        },
-      },
-    });
+    mockReadyRecoverySession();
 
     renderResetPassword();
 
@@ -272,15 +268,7 @@ describe("ResetPassword", () => {
   it("rejects passwords that do not match", async () => {
     const user = userEvent.setup();
 
-    getSessionMock.mockResolvedValue({
-      data: {
-        session: {
-          user: {
-            id: "user-123",
-          },
-        },
-      },
-    });
+    mockReadyRecoverySession();
 
     renderResetPassword();
 
@@ -313,15 +301,7 @@ describe("ResetPassword", () => {
   it("updates the password through Supabase", async () => {
     const user = userEvent.setup();
 
-    getSessionMock.mockResolvedValue({
-      data: {
-        session: {
-          user: {
-            id: "user-123",
-          },
-        },
-      },
-    });
+    mockReadyRecoverySession();
 
     renderResetPassword();
 
@@ -351,15 +331,7 @@ describe("ResetPassword", () => {
   it("shows Supabase password update errors", async () => {
     const user = userEvent.setup();
 
-    getSessionMock.mockResolvedValue({
-      data: {
-        session: {
-          user: {
-            id: "user-123",
-          },
-        },
-      },
-    });
+    mockReadyRecoverySession();
 
     updateUserMock.mockResolvedValue({
       error: {
@@ -393,15 +365,7 @@ describe("ResetPassword", () => {
   it("shows the fallback error when Supabase returns an error without a message", async () => {
     const user = userEvent.setup();
 
-    getSessionMock.mockResolvedValue({
-      data: {
-        session: {
-          user: {
-            id: "user-123",
-          },
-        },
-      },
-    });
+    mockReadyRecoverySession();
 
     updateUserMock.mockResolvedValue({
       error: {},
@@ -430,18 +394,10 @@ describe("ResetPassword", () => {
     );
   });
 
-  it("clears the form and shows success after updating the password", async () => {
+  it("shows a confirmation after updating the password", async () => {
     const user = userEvent.setup();
 
-    getSessionMock.mockResolvedValue({
-      data: {
-        session: {
-          user: {
-            id: "user-123",
-          },
-        },
-      },
-    });
+    mockReadyRecoverySession();
 
     renderResetPassword();
 
@@ -461,26 +417,60 @@ describe("ResetPassword", () => {
       })
     );
 
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      /your password has been updated/i
+    const success = await screen.findByRole("status");
+
+    expect(success).toHaveTextContent(/password updated/i);
+    expect(success).toHaveTextContent(/you're all set/i);
+
+    expect(success).toHaveTextContent(
+      /your password has been updated successfully/i
     );
 
-    expect(screen.getByLabelText(/^new password$/i)).toHaveValue("");
-    expect(screen.getByLabelText(/confirm new password/i)).toHaveValue("");
+    expect(success).toHaveTextContent(/taking you back to your profile/i);
   });
 
-  it("redirects to login after a successful password update", async () => {
+  it("replaces the password form with the success state", async () => {
     const user = userEvent.setup();
 
-    getSessionMock.mockResolvedValue({
-      data: {
-        session: {
-          user: {
-            id: "user-123",
-          },
-        },
-      },
+    mockReadyRecoverySession();
+
+    renderResetPassword();
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", {
+          name: /update password/i,
+        })
+      ).toBeEnabled();
     });
+
+    await fillPasswords(user);
+
+    await user.click(
+      screen.getByRole("button", {
+        name: /update password/i,
+      })
+    );
+
+    await screen.findByRole("status");
+
+    expect(screen.queryByLabelText(/^new password$/i)).not.toBeInTheDocument();
+
+    expect(
+      screen.queryByLabelText(/confirm new password/i)
+    ).not.toBeInTheDocument();
+
+    expect(
+      screen.queryByRole("button", {
+        name: /update password/i,
+      })
+    ).not.toBeInTheDocument();
+  });
+
+  it("redirects to profile after a successful password update", async () => {
+    const user = userEvent.setup();
+
+    mockReadyRecoverySession();
 
     renderResetPassword();
 
@@ -499,7 +489,7 @@ describe("ResetPassword", () => {
     const setTimeoutSpy = vi
       .spyOn(window, "setTimeout")
       .mockImplementation((callback, delay, ...args) => {
-        if (delay === 1200) {
+        if (delay === 1600) {
           callback();
           return 1;
         }
@@ -515,11 +505,11 @@ describe("ResetPassword", () => {
 
     expect(
       await screen.findByRole("heading", {
-        name: /login destination/i,
+        name: /profile destination/i,
       })
     ).toBeInTheDocument();
 
-    expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 1200);
+    expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 1600);
   });
 
   it("unsubscribes from auth state changes when unmounted", async () => {

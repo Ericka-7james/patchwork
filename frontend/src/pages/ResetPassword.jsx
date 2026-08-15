@@ -7,6 +7,7 @@ import "./styles/AuthShared.css";
 import "./styles/ResetPassword.css";
 
 const MIN_PASSWORD_LENGTH = 9;
+const SUCCESS_REDIRECT_DELAY = 1600;
 
 function ResetPassword() {
   const navigate = useNavigate();
@@ -97,12 +98,14 @@ function ResetPassword() {
 
     setPassword("");
     setConfirmPassword("");
-    setSuccessMessage("Your password has been updated.");
+    setSuccessMessage("Your password has been updated successfully.");
 
     window.setTimeout(() => {
-      navigate("/login", { replace: true });
-    }, 1200);
+      navigate("/profile", { replace: true });
+    }, SUCCESS_REDIRECT_DELAY);
   }
+
+  const isSuccess = Boolean(successMessage);
 
   return (
     <div className="auth-page">
@@ -122,68 +125,94 @@ function ResetPassword() {
           </p>
         </section>
 
-        <section className="reset-password-card">
-          <div className="reset-password-heading">
-            <p className="eyebrow">New password</p>
-            <h2>Update your password</h2>
-            <p>Use at least {MIN_PASSWORD_LENGTH} characters.</p>
-          </div>
-
-          <form className="reset-password-form" onSubmit={handleSubmit}>
-            <label className="form-field">
-              <span>New password</span>
-
-              <input
-                type="password"
-                name="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                autoComplete="new-password"
-                placeholder="Your new password"
-                required
-              />
-            </label>
-
-            <label className="form-field">
-              <span>Confirm new password</span>
-
-              <input
-                type="password"
-                name="confirmPassword"
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                autoComplete="new-password"
-                placeholder="Confirm your new password"
-                required
-              />
-            </label>
-
-            {error && (
-              <div className="form-alert form-alert-error" role="alert">
-                {error}
-              </div>
-            )}
-
-            {successMessage && (
-              <div className="form-alert form-alert-success" role="status">
-                {successMessage}
-              </div>
-            )}
-
-            <button
-              className="button button-primary button-full"
-              type="submit"
-              disabled={isSubmitting || !isRecoverySessionReady}
+        <section
+          className={`reset-password-card ${
+            isSuccess ? "reset-password-card-success" : ""
+          }`}
+        >
+          {isSuccess ? (
+            <div
+              className="reset-password-success"
+              role="status"
+              aria-live="polite"
             >
-              {isSubmitting ? "Updating password..." : "Update password"}
-            </button>
-          </form>
+              <div className="reset-password-success-icon" aria-hidden="true">
+                ✓
+              </div>
 
-          {!isRecoverySessionReady && (
-            <p className="reset-password-help">
-              Waiting for a valid recovery session. If this link has expired,{" "}
-              <Link to="/forgot-password">request another reset email</Link>.
-            </p>
+              <p className="eyebrow">Password updated</p>
+
+              <h2>You&apos;re all set.</h2>
+
+              <p className="reset-password-success-message">{successMessage}</p>
+
+              <p className="reset-password-success-redirect">
+                Taking you back to your profile...
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="reset-password-heading">
+                <p className="eyebrow">New password</p>
+
+                <h2>Update your password</h2>
+
+                <p>Use at least {MIN_PASSWORD_LENGTH} characters.</p>
+              </div>
+
+              <form className="reset-password-form" onSubmit={handleSubmit}>
+                <label className="form-field">
+                  <span>New password</span>
+
+                  <input
+                    type="password"
+                    name="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    autoComplete="new-password"
+                    placeholder="Your new password"
+                    required
+                  />
+                </label>
+
+                <label className="form-field">
+                  <span>Confirm new password</span>
+
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    autoComplete="new-password"
+                    placeholder="Confirm your new password"
+                    required
+                  />
+                </label>
+
+                {error && (
+                  <div className="form-alert form-alert-error" role="alert">
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  className="button button-primary button-full"
+                  type="submit"
+                  disabled={isSubmitting || !isRecoverySessionReady}
+                >
+                  {isSubmitting ? "Updating password..." : "Update password"}
+                </button>
+              </form>
+
+              {!isRecoverySessionReady && (
+                <p className="reset-password-help">
+                  Waiting for a valid recovery session. If this link has
+                  expired,{" "}
+                  <Link to="/forgot-password">request another reset email</Link>
+                  .
+                </p>
+              )}
+            </>
           )}
         </section>
       </main>

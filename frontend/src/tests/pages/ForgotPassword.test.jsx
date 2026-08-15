@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -44,6 +44,10 @@ describe("ForgotPassword", () => {
     resetPasswordForEmailMock.mockResolvedValue({
       error: null,
     });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("renders the forgot password page", () => {
@@ -163,7 +167,7 @@ describe("ForgotPassword", () => {
     );
   });
 
-  it("shows a success message after requesting a password reset", async () => {
+  it("shows a confirmation after requesting a password reset", async () => {
     const user = userEvent.setup();
 
     renderForgotPassword();
@@ -179,11 +183,51 @@ describe("ForgotPassword", () => {
       })
     );
 
-    expect(await screen.findByRole("status")).toHaveTextContent(
+    const success = await screen.findByRole("status");
+
+    expect(success).toHaveTextContent(/check your email/i);
+    expect(success).toHaveTextContent(/reset link sent/i);
+
+    expect(success).toHaveTextContent(
       /if an account exists for that email, a password reset link has been sent/i
     );
 
+    expect(success).toHaveTextContent(/taking you back to sign in/i);
+
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("replaces the form with the success confirmation", async () => {
+    const user = userEvent.setup();
+
+    renderForgotPassword();
+
+    await user.type(
+      screen.getByLabelText(/email address/i),
+      "user@example.com"
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: /send reset link/i,
+      })
+    );
+
+    await screen.findByRole("status");
+
+    expect(screen.queryByLabelText(/email address/i)).not.toBeInTheDocument();
+
+    expect(
+      screen.queryByRole("button", {
+        name: /send reset link/i,
+      })
+    ).not.toBeInTheDocument();
+
+    expect(
+      screen.queryByRole("link", {
+        name: /back to sign in/i,
+      })
+    ).not.toBeInTheDocument();
   });
 
   it("shows Supabase password reset errors", async () => {
@@ -314,18 +358,8 @@ describe("ForgotPassword", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
-  it("clears a previous success message before a failed retry", async () => {
+  it("redirects to login after the reset email is requested", async () => {
     const user = userEvent.setup();
-
-    resetPasswordForEmailMock
-      .mockResolvedValueOnce({
-        error: null,
-      })
-      .mockResolvedValueOnce({
-        error: {
-          message: "Second request failed",
-        },
-      });
 
     renderForgotPassword();
 
@@ -334,24 +368,31 @@ describe("ForgotPassword", () => {
       "user@example.com"
     );
 
+    const originalSetTimeout = window.setTimeout;
+
+    const setTimeoutSpy = vi
+      .spyOn(window, "setTimeout")
+      .mockImplementation((callback, delay, ...args) => {
+        if (delay === 1800) {
+          callback();
+          return 1;
+        }
+
+        return originalSetTimeout(callback, delay, ...args);
+      });
+
     await user.click(
       screen.getByRole("button", {
         name: /send reset link/i,
       })
     );
 
-    expect(await screen.findByRole("status")).toBeInTheDocument();
-
-    await user.click(
-      screen.getByRole("button", {
-        name: /send reset link/i,
+    expect(
+      await screen.findByRole("heading", {
+        name: /login destination/i,
       })
-    );
+    ).toBeInTheDocument();
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      /second request failed/i
-    );
-
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 1800);
   });
 });
