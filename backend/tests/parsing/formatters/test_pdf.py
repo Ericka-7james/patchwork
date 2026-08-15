@@ -1,4 +1,4 @@
-from backend.parsing.formatters.pdf import (
+from parsing.formatters.pdf import (
     format_pdf_text,
 )
 

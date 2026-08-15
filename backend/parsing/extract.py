@@ -1,15 +1,15 @@
 import re
 import unicodedata
 
-from backend.parsing.extractors.docx import (
+from parsing.extractors.docx import (
     DocxExtractionError,
     extract_docx_text,
 )
-from backend.parsing.extractors.pdf import (
+from parsing.extractors.pdf import (
     PdfExtractionError,
     extract_pdf_text,
 )
-from backend.parsing.formatters.pdf import (
+from parsing.formatters.pdf import (
     format_pdf_text,
 )
 

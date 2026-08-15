@@ -4,7 +4,7 @@ import httpx
 import pytest
 from fastapi import HTTPException
 
-from backend.core.auth import extract_bearer_token, get_authenticated_user
+from core.auth import extract_bearer_token, get_authenticated_user
 
 
 def test_extract_bearer_token_returns_token():
@@ -53,7 +53,7 @@ async def test_get_authenticated_user_returns_verified_user():
     }
 
     with patch(
-        "backend.core.auth.get_supabase_user",
+        "core.auth.get_supabase_user",
         new=AsyncMock(return_value=expected_user),
     ):
         user = await get_authenticated_user(
@@ -81,7 +81,7 @@ async def test_get_authenticated_user_rejects_invalid_supabase_token():
     )
 
     with patch(
-        "backend.core.auth.get_supabase_user",
+        "core.auth.get_supabase_user",
         new=AsyncMock(side_effect=error),
     ):
         with pytest.raises(HTTPException) as exc_info:
@@ -99,7 +99,7 @@ async def test_get_authenticated_user_rejects_invalid_supabase_token():
 @pytest.mark.asyncio
 async def test_get_authenticated_user_handles_supabase_failure():
     with patch(
-        "backend.core.auth.get_supabase_user",
+        "core.auth.get_supabase_user",
         new=AsyncMock(side_effect=httpx.RequestError("Network error")),
     ):
         with pytest.raises(HTTPException) as exc_info:
@@ -117,7 +117,7 @@ async def test_get_authenticated_user_handles_supabase_failure():
 @pytest.mark.asyncio
 async def test_get_authenticated_user_rejects_user_without_id():
     with patch(
-        "backend.core.auth.get_supabase_user",
+        "core.auth.get_supabase_user",
         new=AsyncMock(return_value={"email": "ericka@example.com"}),
     ):
         with pytest.raises(HTTPException) as exc_info:

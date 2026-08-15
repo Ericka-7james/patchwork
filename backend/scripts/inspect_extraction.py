@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-from backend.parsing.extract import (
+from parsing.extract import (
     DOCX_MIME_TYPE,
     PDF_MIME_TYPE,
     extract_resume_text,
@@ -23,7 +23,7 @@ def get_mime_type(file_path: Path) -> str:
 def main():
     if len(sys.argv) != 2:
         print(
-            "Usage: python -m backend.scripts.inspect_extraction "
+            "Usage: python -m scripts.inspect_extraction "
             "<resume-path>"
         )
         raise SystemExit(1)

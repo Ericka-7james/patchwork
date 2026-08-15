@@ -4,9 +4,9 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from backend.app import app
-from backend.core.auth import get_authenticated_user
-from backend.services.resume_service import (
+from app import app
+from core.auth import get_authenticated_user
+from services.resume_service import (
     build_resume_storage_path,
     download_resume_file,
     get_resume_by_id,
@@ -66,18 +66,18 @@ async def test_get_resume_by_id_returns_accessible_resume():
 
     with (
         patch(
-            "backend.services.resume_service.SUPABASE_URL",
+            "services.resume_service.SUPABASE_URL",
             "https://example.supabase.co",
         ),
         patch(
-            "backend.services.resume_service.get_supabase_headers",
+            "services.resume_service.get_supabase_headers",
             return_value={
                 "apikey": "test-publishable-key",
                 "Authorization": "Bearer test-token",
             },
         ),
         patch(
-            "backend.services.resume_service.httpx.AsyncClient",
+            "services.resume_service.httpx.AsyncClient",
             return_value=async_client,
         ),
     ):
@@ -105,18 +105,18 @@ async def test_get_resume_by_id_returns_none_when_rls_hides_row():
 
     with (
         patch(
-            "backend.services.resume_service.SUPABASE_URL",
+            "services.resume_service.SUPABASE_URL",
             "https://example.supabase.co",
         ),
         patch(
-            "backend.services.resume_service.get_supabase_headers",
+            "services.resume_service.get_supabase_headers",
             return_value={
                 "apikey": "test-publishable-key",
                 "Authorization": "Bearer test-token",
             },
         ),
         patch(
-            "backend.services.resume_service.httpx.AsyncClient",
+            "services.resume_service.httpx.AsyncClient",
             return_value=async_client,
         ),
     ):
@@ -165,18 +165,18 @@ async def test_download_resume_file_returns_private_object_bytes():
 
     with (
         patch(
-            "backend.services.resume_service.SUPABASE_URL",
+            "services.resume_service.SUPABASE_URL",
             "https://example.supabase.co",
         ),
         patch(
-            "backend.services.resume_service.get_supabase_headers",
+            "services.resume_service.get_supabase_headers",
             return_value={
                 "apikey": "test-publishable-key",
                 "Authorization": "Bearer test-token",
             },
         ),
         patch(
-            "backend.services.resume_service.httpx.AsyncClient",
+            "services.resume_service.httpx.AsyncClient",
             return_value=async_client,
         ),
     ):
@@ -207,18 +207,18 @@ async def test_download_resume_file_raises_when_storage_denies_access():
 
     with (
         patch(
-            "backend.services.resume_service.SUPABASE_URL",
+            "services.resume_service.SUPABASE_URL",
             "https://example.supabase.co",
         ),
         patch(
-            "backend.services.resume_service.get_supabase_headers",
+            "services.resume_service.get_supabase_headers",
             return_value={
                 "apikey": "test-publishable-key",
                 "Authorization": "Bearer test-token",
             },
         ),
         patch(
-            "backend.services.resume_service.httpx.AsyncClient",
+            "services.resume_service.httpx.AsyncClient",
             return_value=async_client,
         ),
     ):
@@ -279,18 +279,18 @@ async def test_update_resume_parse_state_updates_resume_row():
 
     with (
         patch(
-            "backend.services.resume_service.SUPABASE_URL",
+            "services.resume_service.SUPABASE_URL",
             "https://example.supabase.co",
         ),
         patch(
-            "backend.services.resume_service.get_supabase_headers",
+            "services.resume_service.get_supabase_headers",
             return_value={
                 "apikey": "test-publishable-key",
                 "Authorization": "Bearer test-token",
             },
         ),
         patch(
-            "backend.services.resume_service.httpx.AsyncClient",
+            "services.resume_service.httpx.AsyncClient",
             return_value=async_client,
         ),
     ):
@@ -339,27 +339,27 @@ def test_parse_endpoint_parses_owned_resume():
 
     with (
         patch(
-            "backend.app.get_resume_by_id",
+            "app.get_resume_by_id",
             new=AsyncMock(
                 return_value=resume
             ),
         ) as get_resume_mock,
         patch(
-            "backend.app.update_resume_parse_state",
+            "app.update_resume_parse_state",
             new=AsyncMock(),
         ) as update_state_mock,
         patch(
-            "backend.app.download_resume_file",
+            "app.download_resume_file",
             new=AsyncMock(
                 return_value=file_bytes
             ),
         ) as download_mock,
         patch(
-            "backend.app.extract_resume_text",
+            "app.extract_resume_text",
             return_value=extracted_text,
         ) as extract_mock,
         patch(
-            "backend.app.parse_resume_structure",
+            "app.parse_resume_structure",
             return_value=parsed_data,
         ) as structure_mock,
     ):
@@ -424,23 +424,23 @@ def test_parse_endpoint_marks_resume_error_when_parsing_fails():
 
     with (
         patch(
-            "backend.app.get_resume_by_id",
+            "app.get_resume_by_id",
             new=AsyncMock(
                 return_value=resume
             ),
         ),
         patch(
-            "backend.app.update_resume_parse_state",
+            "app.update_resume_parse_state",
             new=AsyncMock(),
         ) as update_state_mock,
         patch(
-            "backend.app.download_resume_file",
+            "app.download_resume_file",
             new=AsyncMock(
                 return_value=b"%PDF-test"
             ),
         ),
         patch(
-            "backend.app.extract_resume_text",
+            "app.extract_resume_text",
             side_effect=ValueError(
                 "Unable to extract resume"
             ),
@@ -476,7 +476,7 @@ def test_parse_endpoint_marks_resume_error_when_parsing_fails():
 
 def test_parse_endpoint_returns_404_for_inaccessible_resume():
     with patch(
-        "backend.app.get_resume_by_id",
+        "app.get_resume_by_id",
         new=AsyncMock(
             return_value=None
         ),
@@ -505,7 +505,7 @@ def test_parse_endpoint_rejects_mismatched_owner():
     }
 
     with patch(
-        "backend.app.get_resume_by_id",
+        "app.get_resume_by_id",
         new=AsyncMock(
             return_value=resume
         ),
@@ -549,7 +549,7 @@ def test_parse_endpoint_rejects_invalid_resume_uuid():
 
 def test_parse_endpoint_handles_supabase_network_failure():
     with patch(
-        "backend.app.get_resume_by_id",
+        "app.get_resume_by_id",
         new=AsyncMock(
             side_effect=httpx.RequestError(
                 "Supabase unavailable",

@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from backend.parsing.extract import (
+from parsing.extract import (
     DOCX_MIME_TYPE,
     PDF_MIME_TYPE,
     extract_resume_text,
@@ -15,7 +15,7 @@ def test_extract_resume_text_formats_pdf_visual_wraps():
     )
 
     with patch(
-        "backend.parsing.extract.extract_pdf_text",
+        "parsing.extract.extract_pdf_text",
         return_value=extracted_pdf,
     ):
         text = extract_resume_text(
@@ -39,7 +39,7 @@ def test_extract_resume_text_formats_wrapped_pdf_bullet():
     )
 
     with patch(
-        "backend.parsing.extract.extract_pdf_text",
+        "parsing.extract.extract_pdf_text",
         return_value=extracted_pdf,
     ):
         text = extract_resume_text(
@@ -63,11 +63,11 @@ def test_extract_resume_text_does_not_apply_pdf_formatter_to_docx():
 
     with (
         patch(
-            "backend.parsing.extract.extract_docx_text",
+            "parsing.extract.extract_docx_text",
             return_value=extracted_docx,
         ),
         patch(
-            "backend.parsing.extract.format_pdf_text",
+            "parsing.extract.format_pdf_text",
         ) as formatter,
     ):
         text = extract_resume_text(

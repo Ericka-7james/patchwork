@@ -4,7 +4,7 @@ import pymupdf
 import pytest
 from pypdf.errors import PdfReadError
 
-from backend.parsing.extractors.pdf import (
+from parsing.extractors.pdf import (
     PdfExtractionError,
     extract_pdf_text,
 )
@@ -28,7 +28,7 @@ def test_extract_pdf_text_uses_pymupdf_first():
     ]
 
     with patch(
-        "backend.parsing.extractors.pdf.pymupdf.open",
+        "parsing.extractors.pdf.pymupdf.open",
         return_value=document,
     ):
         text = extract_pdf_text(
@@ -73,7 +73,7 @@ def test_extract_pdf_text_skips_empty_pages():
     ]
 
     with patch(
-        "backend.parsing.extractors.pdf.pymupdf.open",
+        "parsing.extractors.pdf.pymupdf.open",
         return_value=document,
     ):
         text = extract_pdf_text(
@@ -96,13 +96,13 @@ def test_extract_pdf_text_falls_back_to_pypdf():
 
     with (
         patch(
-            "backend.parsing.extractors.pdf.pymupdf.open",
+            "parsing.extractors.pdf.pymupdf.open",
             side_effect=pymupdf.FileDataError(
                 "PyMuPDF failed"
             ),
         ),
         patch(
-            "backend.parsing.extractors.pdf.PdfReader",
+            "parsing.extractors.pdf.PdfReader",
             return_value=reader,
         ),
     ):
@@ -140,11 +140,11 @@ def test_extract_pdf_text_falls_back_when_primary_returns_no_text():
 
     with (
         patch(
-            "backend.parsing.extractors.pdf.pymupdf.open",
+            "parsing.extractors.pdf.pymupdf.open",
             return_value=document,
         ),
         patch(
-            "backend.parsing.extractors.pdf.PdfReader",
+            "parsing.extractors.pdf.PdfReader",
             return_value=reader,
         ),
     ):
@@ -168,13 +168,13 @@ def test_extract_pdf_text_rejects_empty_file():
 def test_extract_pdf_text_rejects_malformed_pdf():
     with (
         patch(
-            "backend.parsing.extractors.pdf.pymupdf.open",
+            "parsing.extractors.pdf.pymupdf.open",
             side_effect=pymupdf.FileDataError(
                 "broken PDF"
             ),
         ),
         patch(
-            "backend.parsing.extractors.pdf.PdfReader",
+            "parsing.extractors.pdf.PdfReader",
             side_effect=PdfReadError(
                 "broken PDF"
             ),
@@ -208,11 +208,11 @@ def test_extract_pdf_text_rejects_pdf_without_selectable_text():
 
     with (
         patch(
-            "backend.parsing.extractors.pdf.pymupdf.open",
+            "parsing.extractors.pdf.pymupdf.open",
             return_value=document,
         ),
         patch(
-            "backend.parsing.extractors.pdf.PdfReader",
+            "parsing.extractors.pdf.PdfReader",
             return_value=reader,
         ),
     ):
@@ -252,11 +252,11 @@ def test_extract_pdf_text_wraps_backend_failures():
 
     with (
         patch(
-            "backend.parsing.extractors.pdf.pymupdf.open",
+            "parsing.extractors.pdf.pymupdf.open",
             return_value=document,
         ),
         patch(
-            "backend.parsing.extractors.pdf.PdfReader",
+            "parsing.extractors.pdf.PdfReader",
             return_value=reader,
         ),
     ):

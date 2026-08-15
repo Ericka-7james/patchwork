@@ -10,20 +10,20 @@ from fastapi import (
 )
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.core.auth import (
+from core.auth import (
     extract_bearer_token,
     get_authenticated_user,
 )
-from backend.parsing.extract import (
+from parsing.extract import (
     DocxExtractionError,
     PdfExtractionError,
     UnsupportedResumeTypeError,
     extract_resume_text,
 )
-from backend.parsing.structure import (
+from parsing.structure import (
     parse_resume_structure,
 )
-from backend.services.resume_service import (
+from services.resume_service import (
     download_resume_file,
     get_resume_by_id,
     update_resume_parse_state,
