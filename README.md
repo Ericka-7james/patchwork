@@ -105,9 +105,18 @@ npm run dev
 Backend:
 
 ```
-cd backend
-.\.venv\Scripts\Activate.ps1
-uvicorn app:app --reload
+cd C:\dev\Projects\patchwork
+.\backend\.venv\Scripts\Activate.ps1
+uvicorn backend.app:app --reload
+```
+
+## Fix Formatting or Lint Errors Before Commit/Push
+
+If Git blocks a commit or push because Prettier or ESLint checks fail, run the frontend checks manually first:
+
+```powershell
+cd frontend
+npm run check
 ```
 
 ### :)
