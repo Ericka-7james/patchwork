@@ -105,9 +105,9 @@ npm run dev
 Backend:
 
 ```
-cd backend
-.\.venv\Scripts\Activate.ps1
-uvicorn app:app --reload
+cd C:\dev\Projects\patchwork
+.\backend\.venv\Scripts\Activate.ps1
+uvicorn backend.app:app --reload
 ```
 
 ### :)

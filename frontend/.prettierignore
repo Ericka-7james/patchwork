@@ -6,3 +6,5 @@ build
 .env.*
 !.env.example
 package-lock.json
+.pytest_cache
+**/.pytest_cache/**
