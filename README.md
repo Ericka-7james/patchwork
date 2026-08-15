@@ -119,4 +119,39 @@ cd frontend
 npm run check
 ```
 
-### :)
+If Prettier reports formatting issues, automatically fix them with:
+
+```powershell
+npx prettier --write .
+```
+
+Then run the checks again:
+
+```powershell
+npm run check
+```
+
+If ESLint reports issues that can be fixed automatically, run:
+
+```powershell
+npm run lint -- --fix
+```
+
+Then verify everything passes:
+
+```powershell
+npm run check
+```
+
+After the checks pass, return to the project root and retry the commit or push:
+
+```powershell
+cd ..
+git add .
+git commit -m "your commit message"
+git push
+```
+
+Do not bypass Husky checks unless absolutely necessary. Fix the formatting, lint, test, or build issue instead.
+
+### Good Day :)
