@@ -1,0 +1,279 @@
+.harvard-resume-document {
+  --page-padding-top: 0.55in;
+  --page-padding-right: 0.6in;
+  --page-padding-bottom: 0.55in;
+  --page-padding-left: 0.6in;
+  --resume-font-size: 10.5pt;
+  --resume-line-height: 1.25;
+  --section-spacing: 12px;
+  --entry-spacing: 8px;
+
+  width: 8.5in;
+  max-width: 100%;
+  margin: 0 auto;
+  color: #111111;
+  font-family: "Times New Roman", Times, serif;
+  font-size: var(--resume-font-size);
+  line-height: var(--resume-line-height);
+}
+
+.harvard-resume-document[data-fit="compact"] {
+  --page-padding-top: 0.48in;
+  --page-padding-right: 0.54in;
+  --page-padding-bottom: 0.48in;
+  --page-padding-left: 0.54in;
+  --resume-line-height: 1.22;
+  --section-spacing: 9px;
+  --entry-spacing: 6px;
+}
+
+.harvard-resume-document[data-fit="tight"] {
+  --page-padding-top: 0.42in;
+  --page-padding-right: 0.48in;
+  --page-padding-bottom: 0.42in;
+  --page-padding-left: 0.48in;
+  --resume-font-size: 10.25pt;
+  --resume-line-height: 1.18;
+  --section-spacing: 7px;
+  --entry-spacing: 5px;
+}
+
+.harvard-resume-page-group {
+  width: 100%;
+}
+
+.harvard-resume-page {
+  box-sizing: border-box;
+  width: 8.5in;
+  max-width: 100%;
+  height: 11in;
+  margin: 0 auto;
+  padding: var(--page-padding-top) var(--page-padding-right)
+    var(--page-padding-bottom) var(--page-padding-left);
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 14px 45px rgba(0, 0, 0, 0.12);
+}
+
+.harvard-resume-page-content {
+  width: 100%;
+}
+
+.harvard-resume-page-divider {
+  width: 8.5in;
+  max-width: 100%;
+  margin: 22px auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--olive);
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.harvard-resume-page-divider::before,
+.harvard-resume-page-divider::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: rgba(85, 107, 47, 0.32);
+}
+
+.harvard-resume-page-divider span {
+  flex: 0 0 auto;
+}
+
+.harvard-resume-block {
+  box-sizing: border-box;
+}
+
+.harvard-resume-block-header {
+  padding-bottom: 2px;
+}
+
+.harvard-resume-block-section,
+.harvard-resume-block-heading {
+  padding-top: var(--section-spacing);
+}
+
+.harvard-resume-block-entry {
+  padding-top: var(--entry-spacing);
+}
+
+.harvard-resume-block-skill {
+  padding-top: 2px;
+}
+
+.harvard-resume-block h2 {
+  margin: 0 0 5px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid #111111;
+  font-size: inherit;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.harvard-resume-header {
+  text-align: center;
+}
+
+.harvard-resume-header h1 {
+  margin: 0;
+  font-size: 18pt;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+}
+
+.harvard-resume-contact {
+  margin-top: 5px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px 8px;
+  font-size: 9.5pt;
+  line-height: 1.25;
+}
+
+.harvard-resume-contact-item {
+  display: inline;
+}
+
+.harvard-resume-contact-item:not(:last-child)::after {
+  content: " •";
+  margin-left: 8px;
+}
+
+.harvard-resume-summary {
+  margin: 0;
+}
+
+.harvard-resume-education-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.harvard-resume-education-list p {
+  margin: 0;
+}
+
+.harvard-resume-entry h3 {
+  margin: 0 0 2px;
+  font-size: inherit;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.harvard-resume-entry ul {
+  margin: 2px 0 0;
+  padding-left: 17px;
+}
+
+.harvard-resume-entry li {
+  margin: 1px 0;
+  padding-left: 1px;
+}
+
+.harvard-resume-entry-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.harvard-resume-entry-heading > div {
+  min-width: 0;
+}
+
+.harvard-resume-entry-dates {
+  flex: 0 0 auto;
+  font-size: 9.5pt;
+  white-space: nowrap;
+}
+
+.harvard-resume-entry-subtitle {
+  margin: 1px 0 0;
+  font-style: italic;
+  line-height: 1.2;
+}
+
+.harvard-resume-block-skill p {
+  margin: 0;
+}
+
+.harvard-resume-block-skill strong {
+  font-weight: 700;
+}
+
+.harvard-resume-certifications {
+  margin: 0;
+  padding-left: 17px;
+}
+
+.harvard-resume-certifications li {
+  margin: 1px 0;
+}
+
+@media (max-width: 760px) {
+  .harvard-resume-document {
+    width: 8.5in;
+    max-width: none;
+  }
+
+  .harvard-resume-page {
+    width: 8.5in;
+    max-width: none;
+  }
+
+  .harvard-resume-page-divider {
+    width: 8.5in;
+    max-width: none;
+  }
+}
+
+@media print {
+  @page {
+    size: letter;
+    margin: 0;
+  }
+
+  .harvard-resume-document {
+    width: 8.5in;
+    max-width: none;
+    margin: 0;
+  }
+
+  .harvard-resume-page-group {
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .harvard-resume-page-group:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .harvard-resume-page {
+    width: 8.5in;
+    height: 11in;
+    max-width: none;
+    margin: 0;
+    box-shadow: none;
+  }
+
+  .harvard-resume-page-divider {
+    display: none;
+  }
+}

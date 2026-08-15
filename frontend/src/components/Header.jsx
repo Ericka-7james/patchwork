@@ -93,6 +93,7 @@ function Header({
                 title={firstName}
               >
                 <span>{firstName}</span>
+
                 <span className="app-user-menu-chevron" aria-hidden="true">
                   ▾
                 </span>
@@ -105,12 +106,30 @@ function Header({
                   aria-label={`${firstName} account menu`}
                 >
                   <Link
+                    to={routes.dashboard}
+                    className="app-user-dropdown-link"
+                    role="menuitem"
+                    onClick={closeUserMenu}
+                  >
+                    {actions.dashboard}
+                  </Link>
+
+                  <Link
                     to={routes.profile}
                     className="app-user-dropdown-link"
                     role="menuitem"
                     onClick={closeUserMenu}
                   >
                     {actions.profile}
+                  </Link>
+
+                  <Link
+                    to={routes.resumeGenerator}
+                    className="app-user-dropdown-link"
+                    role="menuitem"
+                    onClick={closeUserMenu}
+                  >
+                    {actions.resumeGenerator}
                   </Link>
                 </div>
               )}
