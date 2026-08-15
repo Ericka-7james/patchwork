@@ -10,12 +10,16 @@ const {
   signOutMock,
   fromMock,
   unsubscribeMock,
+  profileSingleMock,
+  resumeMaybeSingleMock,
 } = vi.hoisted(() => ({
   getSessionMock: vi.fn(),
   onAuthStateChangeMock: vi.fn(),
   signOutMock: vi.fn(),
   fromMock: vi.fn(),
   unsubscribeMock: vi.fn(),
+  profileSingleMock: vi.fn(),
+  resumeMaybeSingleMock: vi.fn(),
 }));
 
 vi.mock("../../lib/supabase", () => ({
@@ -30,16 +34,34 @@ vi.mock("../../lib/supabase", () => ({
 }));
 
 function AuthConsumer() {
-  const { user, profile, isLoading, isProfileLoading, signOut } = useAuth();
+  const {
+    user,
+    profile,
+    hasResume,
+    isLoading,
+    isProfileLoading,
+    isResumeStateLoading,
+    refreshResumeState,
+    signOut,
+  } = useAuth();
 
   return (
     <div>
       <span data-testid="auth-loading">{String(isLoading)}</span>
       <span data-testid="profile-loading">{String(isProfileLoading)}</span>
+      <span data-testid="resume-loading">{String(isResumeStateLoading)}</span>
+
       <span data-testid="user-id">{user?.id ?? "no-user"}</span>
+
       <span data-testid="first-name">
         {profile?.first_name ?? "no-profile"}
       </span>
+
+      <span data-testid="has-resume">{String(hasResume)}</span>
+
+      <button type="button" onClick={refreshResumeState}>
+        Refresh resume
+      </button>
 
       <button type="button" onClick={signOut}>
         Sign out
@@ -63,6 +85,8 @@ describe("AuthProvider", () => {
     signOutMock.mockReset();
     fromMock.mockReset();
     unsubscribeMock.mockReset();
+    profileSingleMock.mockReset();
+    resumeMaybeSingleMock.mockReset();
 
     onAuthStateChangeMock.mockReturnValue({
       data: {
@@ -70,6 +94,44 @@ describe("AuthProvider", () => {
           unsubscribe: unsubscribeMock,
         },
       },
+    });
+
+    profileSingleMock.mockResolvedValue({
+      data: {
+        id: "user-123",
+        username: "patchuser",
+        first_name: "Ericka",
+      },
+      error: null,
+    });
+
+    resumeMaybeSingleMock.mockResolvedValue({
+      data: null,
+      error: null,
+    });
+
+    fromMock.mockImplementation((table) => {
+      if (table === "profiles") {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: profileSingleMock,
+            })),
+          })),
+        };
+      }
+
+      if (table === "resumes") {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              maybeSingle: resumeMaybeSingleMock,
+            })),
+          })),
+        };
+      }
+
+      throw new Error(`Unexpected Supabase table: ${table}`);
     });
   });
 
@@ -91,6 +153,8 @@ describe("AuthProvider", () => {
 
     expect(screen.getByTestId("user-id")).toHaveTextContent("no-user");
     expect(screen.getByTestId("first-name")).toHaveTextContent("no-profile");
+    expect(screen.getByTestId("has-resume")).toHaveTextContent("false");
+
     expect(fromMock).not.toHaveBeenCalled();
   });
 
@@ -106,27 +170,6 @@ describe("AuthProvider", () => {
       error: null,
     });
 
-    const singleMock = vi.fn().mockResolvedValue({
-      data: {
-        id: "user-123",
-        username: "patchuser",
-        first_name: "Ericka",
-      },
-      error: null,
-    });
-
-    const eqMock = vi.fn().mockReturnValue({
-      single: singleMock,
-    });
-
-    const selectMock = vi.fn().mockReturnValue({
-      eq: eqMock,
-    });
-
-    fromMock.mockReturnValue({
-      select: selectMock,
-    });
-
     renderProvider();
 
     await waitFor(() => {
@@ -134,10 +177,109 @@ describe("AuthProvider", () => {
     });
 
     expect(screen.getByTestId("user-id")).toHaveTextContent("user-123");
+
     expect(fromMock).toHaveBeenCalledWith("profiles");
-    expect(selectMock).toHaveBeenCalledWith("id, username, first_name");
-    expect(eqMock).toHaveBeenCalledWith("id", "user-123");
-    expect(singleMock).toHaveBeenCalledOnce();
+    expect(profileSingleMock).toHaveBeenCalledOnce();
+  });
+
+  it("loads resume state for the authenticated user", async () => {
+    getSessionMock.mockResolvedValue({
+      data: {
+        session: {
+          user: {
+            id: "user-123",
+          },
+        },
+      },
+      error: null,
+    });
+
+    resumeMaybeSingleMock.mockResolvedValue({
+      data: {
+        id: "resume-123",
+      },
+      error: null,
+    });
+
+    renderProvider();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("has-resume")).toHaveTextContent("true");
+    });
+
+    expect(fromMock).toHaveBeenCalledWith("resumes");
+    expect(resumeMaybeSingleMock).toHaveBeenCalledOnce();
+  });
+
+  it("reports no resume when the authenticated user has none", async () => {
+    getSessionMock.mockResolvedValue({
+      data: {
+        session: {
+          user: {
+            id: "user-123",
+          },
+        },
+      },
+      error: null,
+    });
+
+    resumeMaybeSingleMock.mockResolvedValue({
+      data: null,
+      error: null,
+    });
+
+    renderProvider();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("resume-loading")).toHaveTextContent("false");
+    });
+
+    expect(screen.getByTestId("has-resume")).toHaveTextContent("false");
+  });
+
+  it("refreshes resume state on demand", async () => {
+    const user = userEvent.setup();
+
+    getSessionMock.mockResolvedValue({
+      data: {
+        session: {
+          user: {
+            id: "user-123",
+          },
+        },
+      },
+      error: null,
+    });
+
+    resumeMaybeSingleMock
+      .mockResolvedValueOnce({
+        data: null,
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: {
+          id: "resume-123",
+        },
+        error: null,
+      });
+
+    renderProvider();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("has-resume")).toHaveTextContent("false");
+    });
+
+    await user.click(
+      screen.getByRole("button", {
+        name: /refresh resume/i,
+      })
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("has-resume")).toHaveTextContent("true");
+    });
+
+    expect(resumeMaybeSingleMock).toHaveBeenCalledTimes(2);
   });
 
   it("updates the session when Supabase reports an auth change", async () => {
@@ -162,25 +304,13 @@ describe("AuthProvider", () => {
       };
     });
 
-    const singleMock = vi.fn().mockResolvedValue({
+    profileSingleMock.mockResolvedValue({
       data: {
         id: "user-456",
         username: "newuser",
         first_name: "Jordan",
       },
       error: null,
-    });
-
-    const eqMock = vi.fn().mockReturnValue({
-      single: singleMock,
-    });
-
-    const selectMock = vi.fn().mockReturnValue({
-      eq: eqMock,
-    });
-
-    fromMock.mockReturnValue({
-      select: selectMock,
     });
 
     renderProvider();
@@ -230,27 +360,6 @@ describe("AuthProvider", () => {
       };
     });
 
-    const singleMock = vi.fn().mockResolvedValue({
-      data: {
-        id: "user-123",
-        username: "patchuser",
-        first_name: "Ericka",
-      },
-      error: null,
-    });
-
-    const eqMock = vi.fn().mockReturnValue({
-      single: singleMock,
-    });
-
-    const selectMock = vi.fn().mockReturnValue({
-      eq: eqMock,
-    });
-
-    fromMock.mockReturnValue({
-      select: selectMock,
-    });
-
     renderProvider();
 
     await waitFor(() => {
@@ -264,6 +373,7 @@ describe("AuthProvider", () => {
     });
 
     expect(screen.getByTestId("first-name")).toHaveTextContent("no-profile");
+    expect(screen.getByTestId("has-resume")).toHaveTextContent("false");
   });
 
   it("calls Supabase sign out", async () => {

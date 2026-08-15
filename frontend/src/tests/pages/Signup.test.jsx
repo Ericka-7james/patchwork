@@ -4,8 +4,9 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import Signup from "../../pages/Signup";
 
-const { signUpMock } = vi.hoisted(() => ({
+const { signUpMock, useAuthMock } = vi.hoisted(() => ({
   signUpMock: vi.fn(),
+  useAuthMock: vi.fn(),
 }));
 
 vi.mock("../../lib/supabase", () => ({
@@ -14,6 +15,10 @@ vi.mock("../../lib/supabase", () => ({
       signUp: signUpMock,
     },
   },
+}));
+
+vi.mock("../../context/useAuth", () => ({
+  useAuth: useAuthMock,
 }));
 
 function renderSignup() {
@@ -46,6 +51,11 @@ async function fillSignupForm(
 describe("Signup", () => {
   beforeEach(() => {
     signUpMock.mockReset();
+    useAuthMock.mockReset();
+
+    useAuthMock.mockReturnValue({
+      hasResume: false,
+    });
   });
 
   it("renders the signup form", () => {
