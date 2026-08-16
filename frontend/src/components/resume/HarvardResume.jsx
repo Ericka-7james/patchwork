@@ -1,9 +1,14 @@
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { RESUME_GENERATOR_CONTENT } from "../../content/pages/resumeGeneratorContent";
 import "./styles/HarvardResume.css";
 
 const FIT_LEVELS = ["normal", "compact", "tight"];
-const MIN_SKILL_COUNT = 3;
+
+const MIN_SKILL_CATEGORIES = 3;
+const MIN_PROJECTS = 1;
+const MIN_EXPERIENCE_BULLETS = 8;
+
+const SECOND_PAGE_MIN_FILL_RATIO = 0.5;
 
 const EMPTY_OBJECT = Object.freeze({});
 const EMPTY_ARRAY = Object.freeze([]);
@@ -12,13 +17,23 @@ function hasText(value) {
   return typeof value === "string" && value.trim().length > 0;
 }
 
+function cleanText(value) {
+  return hasText(value) ? value.trim() : "";
+}
+
+function cleanTextArray(values) {
+  return Array.isArray(values)
+    ? values.filter(hasText).map((value) => value.trim())
+    : [];
+}
+
 function getContactItems(contact) {
   if (!contact || typeof contact !== "object" || Array.isArray(contact)) {
     return [];
   }
 
   return [
-    ...(Array.isArray(contact.other) ? contact.other.filter(hasText) : []),
+    ...(Array.isArray(contact.other) ? contact.other : []),
     contact.location,
     contact.email,
     contact.linkedin,
@@ -28,44 +43,227 @@ function getContactItems(contact) {
     .map((item) => item.trim());
 }
 
-function getVisibleSkillEntries(skills, limit) {
-  let remaining = limit;
+function normalizeEducation(education) {
+  if (!Array.isArray(education)) {
+    return [];
+  }
 
-  return Object.entries(skills)
-    .map(([category, values]) => {
-      if (!hasText(category) || !Array.isArray(values) || remaining <= 0) {
+  return education
+    .map((item) => {
+      if (hasText(item)) {
+        return {
+          text: item.trim(),
+        };
+      }
+
+      if (!item || typeof item !== "object") {
         return null;
       }
 
-      const cleanValues = values.filter(hasText).map((value) => value.trim());
+      const text =
+        cleanText(item.heading) ||
+        cleanText(item.name) ||
+        cleanText(item.school) ||
+        cleanText(item.institution) ||
+        cleanText(item.degree);
+
+      return text ? { text } : null;
+    })
+    .filter(Boolean);
+}
+
+function normalizeExperience(experience) {
+  if (!Array.isArray(experience)) {
+    return [];
+  }
+
+  return experience
+    .filter(Boolean)
+    .map((item) => {
+      if (typeof item === "string") {
+        const heading = cleanText(item);
+
+        return heading
+          ? {
+              heading,
+              subtitle: "",
+              dates: "",
+              bullets: [],
+            }
+          : null;
+      }
+
+      const explicitHeading = cleanText(item.heading);
+
+      const company =
+        cleanText(item.company) ||
+        cleanText(item.employer) ||
+        cleanText(item.organization);
+
+      const role =
+        cleanText(item.role) ||
+        cleanText(item.title) ||
+        cleanText(item.position);
+
+      const dates =
+        cleanText(item.dates) ||
+        cleanText(item.date) ||
+        cleanText(item.duration);
+
+      const heading =
+        explicitHeading || [company, role].filter(Boolean).join(" — ");
+
+      const bullets =
+        cleanTextArray(item.bullets).length > 0
+          ? cleanTextArray(item.bullets)
+          : cleanTextArray(item.details);
+
+      if (!heading && !role && !dates && bullets.length === 0) {
+        return null;
+      }
+
+      return {
+        heading,
+        subtitle: explicitHeading ? "" : role,
+        dates: explicitHeading ? "" : dates,
+        bullets,
+      };
+    })
+    .filter(Boolean);
+}
+
+function normalizeProjects(projects) {
+  if (!Array.isArray(projects)) {
+    return [];
+  }
+
+  return projects
+    .filter(Boolean)
+    .map((item, index) => {
+      if (typeof item === "string") {
+        const heading = cleanText(item);
+
+        return heading
+          ? {
+              heading,
+              description: "",
+              dates: "",
+              bullets: [],
+            }
+          : null;
+      }
+
+      const heading =
+        cleanText(item.name) ||
+        cleanText(item.title) ||
+        cleanText(item.heading) ||
+        cleanText(item.project_name) ||
+        cleanText(item.projectName) ||
+        `Project ${index + 1}`;
+
+      const description =
+        cleanText(item.description) ||
+        cleanText(item.summary) ||
+        cleanText(item.subtitle);
+
+      const dates =
+        cleanText(item.dates) ||
+        cleanText(item.date) ||
+        cleanText(item.duration);
+
+      const bullets =
+        cleanTextArray(item.bullets).length > 0
+          ? cleanTextArray(item.bullets)
+          : cleanTextArray(item.details);
+
+      if (!heading && !description && !dates && bullets.length === 0) {
+        return null;
+      }
+
+      return {
+        heading,
+        description,
+        dates,
+        bullets,
+      };
+    })
+    .filter(Boolean);
+}
+
+function normalizeSkillEntries(skills) {
+  if (!skills || typeof skills !== "object" || Array.isArray(skills)) {
+    return [];
+  }
+
+  return Object.entries(skills)
+    .map(([category, values]) => {
+      if (!hasText(category) || !Array.isArray(values)) {
+        return null;
+      }
+
+      const cleanValues = cleanTextArray(values);
 
       if (cleanValues.length === 0) {
         return null;
       }
 
-      const visibleValues = cleanValues.slice(0, remaining);
-
-      remaining -= visibleValues.length;
-
-      if (visibleValues.length === 0) {
-        return null;
-      }
-
-      return [category.trim(), visibleValues];
+      return [category.trim(), cleanValues];
     })
     .filter(Boolean);
 }
 
+function getMinimumExperienceLimits(experience) {
+  const originalLimits = experience.map((item) => item.bullets.length);
+
+  const totalBullets = originalLimits.reduce(
+    (total, count) => total + count,
+    0
+  );
+
+  if (totalBullets <= MIN_EXPERIENCE_BULLETS) {
+    return originalLimits;
+  }
+
+  const minimumLimits = originalLimits.map((count) => (count > 0 ? 1 : 0));
+
+  let allocated = minimumLimits.reduce((total, count) => total + count, 0);
+
+  const target = Math.min(
+    totalBullets,
+    Math.max(MIN_EXPERIENCE_BULLETS, allocated)
+  );
+
+  let index = 0;
+
+  while (allocated < target && originalLimits.length > 0) {
+    const currentIndex = index % originalLimits.length;
+
+    if (minimumLimits[currentIndex] < originalLimits[currentIndex]) {
+      minimumLimits[currentIndex] += 1;
+      allocated += 1;
+    }
+
+    index += 1;
+  }
+
+  return minimumLimits;
+}
+
 function packBlocks(blocks, heights, availableHeight) {
   const pages = [];
+  const pageUsedHeights = [];
+
   let currentPage = [];
   let usedHeight = 0;
   let hasOversizedBlock = false;
 
-  function startNewPage() {
-    if (currentPage.length > 0) {
-      pages.push(currentPage);
+  function finishPage() {
+    if (currentPage.length === 0) {
+      return;
     }
+
+    pages.push(currentPage);
+    pageUsedHeights.push(usedHeight);
 
     currentPage = [];
     usedHeight = 0;
@@ -75,6 +273,7 @@ function packBlocks(blocks, heights, availableHeight) {
     const blockHeight = heights.get(block.key) ?? 0;
 
     const nextBlock = blocks[index + 1];
+
     const nextBlockHeight = nextBlock ? (heights.get(nextBlock.key) ?? 0) : 0;
 
     const requiredHeight =
@@ -86,7 +285,7 @@ function packBlocks(blocks, heights, availableHeight) {
       currentPage.length > 0 &&
       usedHeight + requiredHeight > availableHeight
     ) {
-      startNewPage();
+      finishPage();
     }
 
     if (blockHeight > availableHeight) {
@@ -97,13 +296,27 @@ function packBlocks(blocks, heights, availableHeight) {
     usedHeight += blockHeight;
   });
 
-  if (currentPage.length > 0) {
-    pages.push(currentPage);
-  }
+  finishPage();
 
   return {
     pages,
+    pageUsedHeights,
     hasOversizedBlock,
+  };
+}
+
+function createInitialFitState({
+  skillCategoryCount,
+  projectCount,
+  experienceBulletLimits,
+}) {
+  return {
+    fitLevelIndex: 0,
+    skillCategoryLimit: skillCategoryCount,
+    projectLimit: projectCount,
+    experienceBulletLimits,
+    pageKeys: [],
+    settled: false,
   };
 }
 
@@ -111,123 +324,123 @@ function HarvardResume({ parsedData = EMPTY_OBJECT, onFitChange }) {
   const { sections } = RESUME_GENERATOR_CONTENT.document;
 
   const documentRef = useRef(null);
+  const lastReportRef = useRef("");
 
-  const name = hasText(parsedData.name) ? parsedData.name.trim() : "";
+  const name = cleanText(parsedData.name);
 
   const contactItems = useMemo(
     () => getContactItems(parsedData.contact),
     [parsedData.contact]
   );
 
-  const summary = hasText(parsedData.summary) ? parsedData.summary.trim() : "";
+  const summary = cleanText(parsedData.summary);
 
   const education = useMemo(
-    () =>
-      Array.isArray(parsedData.education)
-        ? parsedData.education.filter(hasText).map((item) => item.trim())
-        : EMPTY_ARRAY,
+    () => normalizeEducation(parsedData.education),
     [parsedData.education]
   );
 
   const experience = useMemo(
-    () =>
-      Array.isArray(parsedData.experience)
-        ? parsedData.experience
-            .filter(Boolean)
-            .map((item) => ({
-              company: hasText(item?.company) ? item.company.trim() : "",
-              role: hasText(item?.role) ? item.role.trim() : "",
-              dates: hasText(item?.dates) ? item.dates.trim() : "",
-              bullets: Array.isArray(item?.bullets)
-                ? item.bullets.filter(hasText).map((bullet) => bullet.trim())
-                : [],
-            }))
-            .filter(
-              (item) =>
-                item.company ||
-                item.role ||
-                item.dates ||
-                item.bullets.length > 0
-            )
-        : EMPTY_ARRAY,
+    () => normalizeExperience(parsedData.experience),
     [parsedData.experience]
   );
 
   const projects = useMemo(
-    () =>
-      Array.isArray(parsedData.projects)
-        ? parsedData.projects
-            .filter(Boolean)
-            .map((item) => ({
-              name: hasText(item?.name) ? item.name.trim() : "",
-              description: hasText(item?.description)
-                ? item.description.trim()
-                : "",
-              dates: hasText(item?.dates) ? item.dates.trim() : "",
-              bullets: Array.isArray(item?.bullets)
-                ? item.bullets.filter(hasText).map((bullet) => bullet.trim())
-                : [],
-            }))
-            .filter(
-              (item) =>
-                item.name ||
-                item.description ||
-                item.dates ||
-                item.bullets.length > 0
-            )
-        : EMPTY_ARRAY,
+    () => normalizeProjects(parsedData.projects),
     [parsedData.projects]
   );
 
   const certifications = useMemo(
-    () =>
-      Array.isArray(parsedData.certifications)
-        ? parsedData.certifications.filter(hasText).map((item) => item.trim())
-        : EMPTY_ARRAY,
+    () => cleanTextArray(parsedData.certifications),
     [parsedData.certifications]
   );
 
-  const skills = useMemo(() => {
-    if (
-      parsedData.skills &&
-      typeof parsedData.skills === "object" &&
-      !Array.isArray(parsedData.skills)
-    ) {
-      return parsedData.skills;
-    }
+  const skillEntries = useMemo(
+    () => normalizeSkillEntries(parsedData.skills),
+    [parsedData.skills]
+  );
 
-    return EMPTY_OBJECT;
-  }, [parsedData.skills]);
+  const initialExperienceBulletLimits = useMemo(
+    () => experience.map((item) => item.bullets.length),
+    [experience]
+  );
 
-  const totalSkillCount = useMemo(
+  const minimumExperienceBulletLimits = useMemo(
+    () => getMinimumExperienceLimits(experience),
+    [experience]
+  );
+
+  const [fitState, setFitState] = useState(() =>
+    createInitialFitState({
+      skillCategoryCount: skillEntries.length,
+      projectCount: projects.length,
+      experienceBulletLimits: initialExperienceBulletLimits,
+    })
+  );
+
+  const sourceSignature = useMemo(
     () =>
-      Object.entries(skills).reduce((total, [category, values]) => {
-        if (!hasText(category) || !Array.isArray(values)) {
-          return total;
-        }
-
-        return total + values.filter(hasText).length;
-      }, 0),
-    [skills]
+      JSON.stringify({
+        name,
+        contactItems,
+        summary,
+        education,
+        experience,
+        projects,
+        skillEntries,
+        certifications,
+      }),
+    [
+      certifications,
+      contactItems,
+      education,
+      experience,
+      name,
+      projects,
+      skillEntries,
+      summary,
+    ]
   );
 
-  const initialProjectBulletLimits = useMemo(
-    () => projects.map((project) => project.bullets.length),
-    [projects]
-  );
+  useEffect(() => {
+    lastReportRef.current = "";
 
-  const [fitState, setFitState] = useState(() => ({
-    fitLevelIndex: 0,
-    skillLimit: totalSkillCount,
-    projectBulletLimits: initialProjectBulletLimits,
-    pageKeys: [],
-  }));
+    setFitState(
+      createInitialFitState({
+        skillCategoryCount: skillEntries.length,
+        projectCount: projects.length,
+        experienceBulletLimits: initialExperienceBulletLimits,
+      })
+    );
+  }, [
+    sourceSignature,
+    skillEntries.length,
+    projects.length,
+    initialExperienceBulletLimits,
+  ]);
 
   const fitLevel = FIT_LEVELS[fitState.fitLevelIndex];
 
   const visibleSkillEntries = useMemo(
-    () => getVisibleSkillEntries(skills, fitState.skillLimit),
-    [skills, fitState.skillLimit]
+    () => skillEntries.slice(0, Math.max(0, fitState.skillCategoryLimit)),
+    [fitState.skillCategoryLimit, skillEntries]
+  );
+
+  const visibleProjects = useMemo(
+    () => projects.slice(0, Math.max(0, fitState.projectLimit)),
+    [fitState.projectLimit, projects]
+  );
+
+  const visibleExperience = useMemo(
+    () =>
+      experience.map((item, index) => ({
+        ...item,
+        bullets: item.bullets.slice(
+          0,
+          fitState.experienceBulletLimits[index] ?? item.bullets.length
+        ),
+      })),
+    [experience, fitState.experienceBulletLimits]
   );
 
   const blocks = useMemo(() => {
@@ -276,23 +489,22 @@ function HarvardResume({ parsedData = EMPTY_OBJECT, onFitChange }) {
 
     if (education.length > 0) {
       nextBlocks.push({
-        key: "education",
-        className: "harvard-resume-block harvard-resume-block-section",
-        content: (
-          <section>
-            <h2>{sections.education}</h2>
+        key: "education-heading",
+        className: "harvard-resume-block harvard-resume-block-heading",
+        keepWithNext: true,
+        content: <h2>{sections.education}</h2>,
+      });
 
-            <div className="harvard-resume-education-list">
-              {education.map((item, index) => (
-                <p key={`${item}-${index}`}>{item}</p>
-              ))}
-            </div>
-          </section>
-        ),
+      education.forEach((item, index) => {
+        nextBlocks.push({
+          key: `education-${index}`,
+          className: "harvard-resume-block harvard-resume-block-education",
+          content: <p>{item.text}</p>,
+        });
       });
     }
 
-    if (experience.length > 0) {
+    if (visibleExperience.length > 0) {
       nextBlocks.push({
         key: "experience-heading",
         className: "harvard-resume-block harvard-resume-block-heading",
@@ -300,42 +512,45 @@ function HarvardResume({ parsedData = EMPTY_OBJECT, onFitChange }) {
         content: <h2>{sections.experience}</h2>,
       });
 
-      experience.forEach((item, index) => {
+      visibleExperience.forEach((item, index) => {
         nextBlocks.push({
-          key: `experience-${index}`,
-          className: "harvard-resume-block harvard-resume-block-entry",
+          key: `experience-${index}-heading`,
+          className: "harvard-resume-block harvard-resume-block-entry-heading",
+          keepWithNext: item.bullets.length > 0,
           content: (
-            <article className="harvard-resume-entry">
-              <div className="harvard-resume-entry-heading">
-                <div>
-                  {item.company && <h3>{item.company}</h3>}
+            <div className="harvard-resume-entry-heading">
+              <div>
+                {item.heading && <h3>{item.heading}</h3>}
 
-                  {item.role && (
-                    <p className="harvard-resume-entry-subtitle">{item.role}</p>
-                  )}
-                </div>
-
-                {item.dates && (
-                  <span className="harvard-resume-entry-dates">
-                    {item.dates}
-                  </span>
+                {item.subtitle && (
+                  <p className="harvard-resume-entry-subtitle">
+                    {item.subtitle}
+                  </p>
                 )}
               </div>
 
-              {item.bullets.length > 0 && (
-                <ul>
-                  {item.bullets.map((bullet, bulletIndex) => (
-                    <li key={`${index}-${bulletIndex}`}>{bullet}</li>
-                  ))}
-                </ul>
+              {item.dates && (
+                <span className="harvard-resume-entry-dates">{item.dates}</span>
               )}
-            </article>
+            </div>
           ),
+        });
+
+        item.bullets.forEach((bullet, bulletIndex) => {
+          nextBlocks.push({
+            key: `experience-${index}-bullet-${bulletIndex}`,
+            className: "harvard-resume-block harvard-resume-block-bullet",
+            content: (
+              <ul className="harvard-resume-single-bullet">
+                <li>{bullet}</li>
+              </ul>
+            ),
+          });
         });
       });
     }
 
-    if (projects.length > 0) {
+    if (visibleProjects.length > 0) {
       nextBlocks.push({
         key: "projects-heading",
         className: "harvard-resume-block harvard-resume-block-heading",
@@ -343,44 +558,40 @@ function HarvardResume({ parsedData = EMPTY_OBJECT, onFitChange }) {
         content: <h2>{sections.projects}</h2>,
       });
 
-      projects.forEach((item, index) => {
-        const bulletLimit =
-          fitState.projectBulletLimits[index] ?? item.bullets.length;
-
-        const visibleBullets = item.bullets.slice(0, bulletLimit);
-
+      visibleProjects.forEach((item, index) => {
         nextBlocks.push({
-          key: `project-${index}`,
-          className: "harvard-resume-block harvard-resume-block-entry",
+          key: `project-${index}-heading`,
+          className: "harvard-resume-block harvard-resume-block-entry-heading",
+          keepWithNext: item.description.length > 0 || item.bullets.length > 0,
           content: (
-            <article className="harvard-resume-entry">
-              <div className="harvard-resume-entry-heading">
-                <div>
-                  {item.name && <h3>{item.name}</h3>}
+            <div className="harvard-resume-entry-heading">
+              <div>
+                {item.heading && <h3>{item.heading}</h3>}
 
-                  {item.description && (
-                    <p className="harvard-resume-entry-subtitle">
-                      {item.description}
-                    </p>
-                  )}
-                </div>
-
-                {item.dates && (
-                  <span className="harvard-resume-entry-dates">
-                    {item.dates}
-                  </span>
+                {item.description && (
+                  <p className="harvard-resume-entry-subtitle">
+                    {item.description}
+                  </p>
                 )}
               </div>
 
-              {visibleBullets.length > 0 && (
-                <ul>
-                  {visibleBullets.map((bullet, bulletIndex) => (
-                    <li key={`${index}-${bulletIndex}`}>{bullet}</li>
-                  ))}
-                </ul>
+              {item.dates && (
+                <span className="harvard-resume-entry-dates">{item.dates}</span>
               )}
-            </article>
+            </div>
           ),
+        });
+
+        item.bullets.forEach((bullet, bulletIndex) => {
+          nextBlocks.push({
+            key: `project-${index}-bullet-${bulletIndex}`,
+            className: "harvard-resume-block harvard-resume-block-bullet",
+            content: (
+              <ul className="harvard-resume-single-bullet">
+                <li>{bullet}</li>
+              </ul>
+            ),
+          });
         });
       });
     }
@@ -393,9 +604,9 @@ function HarvardResume({ parsedData = EMPTY_OBJECT, onFitChange }) {
         content: <h2>{sections.skills}</h2>,
       });
 
-      visibleSkillEntries.forEach(([category, values]) => {
+      visibleSkillEntries.forEach(([category, values], index) => {
         nextBlocks.push({
-          key: `skills-${category}`,
+          key: `skills-${index}`,
           className: "harvard-resume-block harvard-resume-block-skill",
           content: (
             <p>
@@ -408,19 +619,22 @@ function HarvardResume({ parsedData = EMPTY_OBJECT, onFitChange }) {
 
     if (certifications.length > 0) {
       nextBlocks.push({
-        key: "certifications",
-        className: "harvard-resume-block harvard-resume-block-section",
-        content: (
-          <section>
-            <h2>{sections.certifications}</h2>
+        key: "certifications-heading",
+        className: "harvard-resume-block harvard-resume-block-heading",
+        keepWithNext: true,
+        content: <h2>{sections.certifications}</h2>,
+      });
 
-            <ul className="harvard-resume-certifications">
-              {certifications.map((certification, index) => (
-                <li key={`${certification}-${index}`}>{certification}</li>
-              ))}
+      certifications.forEach((certification, index) => {
+        nextBlocks.push({
+          key: `certification-${index}`,
+          className: "harvard-resume-block harvard-resume-block-certification",
+          content: (
+            <ul className="harvard-resume-single-bullet">
+              <li>{certification}</li>
             </ul>
-          </section>
-        ),
+          ),
+        });
       });
     }
 
@@ -429,19 +643,18 @@ function HarvardResume({ parsedData = EMPTY_OBJECT, onFitChange }) {
     certifications,
     contactItems,
     education,
-    experience,
-    fitState.projectBulletLimits,
     name,
-    projects,
     sections,
     summary,
+    visibleExperience,
+    visibleProjects,
     visibleSkillEntries,
   ]);
 
   useLayoutEffect(() => {
     const documentElement = documentRef.current;
 
-    if (!documentElement || blocks.length === 0) {
+    if (!documentElement || blocks.length === 0 || fitState.settled) {
       return;
     }
 
@@ -453,27 +666,28 @@ function HarvardResume({ parsedData = EMPTY_OBJECT, onFitChange }) {
 
     const pageHeight = firstPage.clientHeight;
 
-    /*
-     * JSDOM does not perform physical browser layout, so clientHeight is
-     * normally zero during unit tests. Pagination is therefore skipped there.
-     */
     if (pageHeight <= 0) {
       return;
     }
 
     const pageStyles = window.getComputedStyle(firstPage);
 
-    const availableHeight =
-      pageHeight -
-      Number.parseFloat(pageStyles.paddingTop || "0") -
-      Number.parseFloat(pageStyles.paddingBottom || "0");
+    const paddingTop = Number.parseFloat(pageStyles.paddingTop);
+
+    const paddingBottom = Number.parseFloat(pageStyles.paddingBottom);
+
+    if (!Number.isFinite(paddingTop) || !Number.isFinite(paddingBottom)) {
+      return;
+    }
+
+    const availableHeight = pageHeight - paddingTop - paddingBottom;
 
     if (!Number.isFinite(availableHeight) || availableHeight <= 0) {
       return;
     }
 
     const blockElements = documentElement.querySelectorAll(
-      "[data-resume-block-key]"
+      ".harvard-resume-measurement [data-resume-block-key]"
     );
 
     const heights = new Map();
@@ -481,47 +695,81 @@ function HarvardResume({ parsedData = EMPTY_OBJECT, onFitChange }) {
     blockElements.forEach((element) => {
       const key = element.dataset.resumeBlockKey;
 
-      if (!heights.has(key)) {
-        heights.set(key, element.getBoundingClientRect().height);
+      if (!key || heights.has(key)) {
+        return;
       }
+
+      heights.set(key, element.getBoundingClientRect().height);
     });
 
     const result = packBlocks(blocks, heights, availableHeight);
 
-    const fitsTwoPages = result.pages.length <= 2 && !result.hasOversizedBlock;
+    const pageCount = result.pages.length;
 
-    if (fitsTwoPages) {
-      const removedSkills = Math.max(0, totalSkillCount - fitState.skillLimit);
+    const lastPageUsedHeight =
+      result.pageUsedHeights[result.pageUsedHeights.length - 1] ?? 0;
 
-      const removedProjectBullets = initialProjectBulletLimits.reduce(
-        (total, originalLimit, index) =>
-          total +
-          Math.max(
-            0,
-            originalLimit - (fitState.projectBulletLimits[index] ?? 0)
-          ),
-        0
-      );
+    const lastPageFillRatio =
+      pageCount > 0 ? lastPageUsedHeight / availableHeight : 0;
 
-      setFitState((current) => {
-        const currentPageSignature = JSON.stringify(current.pageKeys);
-        const nextPageSignature = JSON.stringify(result.pages);
+    const isOnePage = pageCount === 1 && !result.hasOversizedBlock;
 
-        if (currentPageSignature === nextPageSignature) {
-          return current;
-        }
+    const isHealthyTwoPage =
+      pageCount === 2 &&
+      lastPageFillRatio >= SECOND_PAGE_MIN_FILL_RATIO &&
+      !result.hasOversizedBlock;
 
-        return {
-          ...current,
-          pageKeys: result.pages,
-        };
-      });
+    const removedSkills = Math.max(
+      0,
+      skillEntries.length - fitState.skillCategoryLimit
+    );
 
-      onFitChange?.({
-        fits: true,
+    const removedProjects = Math.max(
+      0,
+      projects.length - fitState.projectLimit
+    );
+
+    const removedExperienceBullets = initialExperienceBulletLimits.reduce(
+      (total, originalLimit, index) =>
+        total +
+        Math.max(
+          0,
+          originalLimit - (fitState.experienceBulletLimits[index] ?? 0)
+        ),
+      0
+    );
+
+    function reportFit({ fits, pages, mode }) {
+      const report = {
+        fits,
+        pageCount: pages.length,
+        lastPageFillRatio,
         removedSkills,
-        removedProjectBullets,
+        removedProjects,
+        removedExperienceBullets,
         fitLevel,
+        layoutMode: mode,
+      };
+
+      const signature = JSON.stringify(report);
+
+      if (lastReportRef.current !== signature) {
+        lastReportRef.current = signature;
+        onFitChange?.(report);
+      }
+    }
+
+    if (isOnePage || isHealthyTwoPage) {
+      setFitState((current) => ({
+        ...current,
+        pageKeys: result.pages,
+        settled: true,
+      }));
+
+      reportFit({
+        fits: true,
+        pages: result.pages,
+        mode: isOnePage ? "one-page" : "two-page",
       });
 
       return;
@@ -537,31 +785,62 @@ function HarvardResume({ parsedData = EMPTY_OBJECT, onFitChange }) {
       return;
     }
 
-    const minimumSkills = Math.min(MIN_SKILL_COUNT, totalSkillCount);
+    const minimumSkillCategoryCount = Math.min(
+      MIN_SKILL_CATEGORIES,
+      skillEntries.length
+    );
 
-    if (fitState.skillLimit > minimumSkills) {
+    if (fitState.skillCategoryLimit > minimumSkillCategoryCount) {
       setFitState((current) => ({
         ...current,
-        skillLimit: current.skillLimit - 1,
+        skillCategoryLimit: current.skillCategoryLimit - 1,
         pageKeys: [],
       }));
 
       return;
     }
 
-    const projectIndexToTrim = fitState.projectBulletLimits.findLastIndex(
-      (limit) => limit > 0
+    const minimumProjectCount =
+      projects.length > 0 ? Math.min(MIN_PROJECTS, projects.length) : 0;
+
+    if (fitState.projectLimit > minimumProjectCount) {
+      setFitState((current) => ({
+        ...current,
+        projectLimit: current.projectLimit - 1,
+        pageKeys: [],
+      }));
+
+      return;
+    }
+
+    /*
+     * If we've already reduced Skills to the preferred
+     * three-category floor and Projects to the one-project
+     * floor, drop Skills entirely before touching Experience.
+     */
+    if (fitState.skillCategoryLimit > 0) {
+      setFitState((current) => ({
+        ...current,
+        skillCategoryLimit: 0,
+        pageKeys: [],
+      }));
+
+      return;
+    }
+
+    const experienceIndexToTrim = fitState.experienceBulletLimits.findLastIndex(
+      (limit, index) => limit > (minimumExperienceBulletLimits[index] ?? 0)
     );
 
-    if (projectIndexToTrim !== -1) {
+    if (experienceIndexToTrim !== -1) {
       setFitState((current) => {
-        const nextProjectBulletLimits = [...current.projectBulletLimits];
+        const nextLimits = [...current.experienceBulletLimits];
 
-        nextProjectBulletLimits[projectIndexToTrim] -= 1;
+        nextLimits[experienceIndexToTrim] -= 1;
 
         return {
           ...current,
-          projectBulletLimits: nextProjectBulletLimits,
+          experienceBulletLimits: nextLimits,
           pageKeys: [],
         };
       });
@@ -569,43 +848,44 @@ function HarvardResume({ parsedData = EMPTY_OBJECT, onFitChange }) {
       return;
     }
 
+    if (pageCount <= 2 && !result.hasOversizedBlock) {
+      setFitState((current) => ({
+        ...current,
+        pageKeys: result.pages,
+        settled: true,
+      }));
+
+      reportFit({
+        fits: true,
+        pages: result.pages,
+        mode: "two-page-required",
+      });
+
+      return;
+    }
+
     const finalPages = result.pages.slice(0, 2);
 
-    setFitState((current) => {
-      const currentPageSignature = JSON.stringify(current.pageKeys);
-      const nextPageSignature = JSON.stringify(finalPages);
+    setFitState((current) => ({
+      ...current,
+      pageKeys: finalPages,
+      settled: true,
+    }));
 
-      if (currentPageSignature === nextPageSignature) {
-        return current;
-      }
-
-      return {
-        ...current,
-        pageKeys: finalPages,
-      };
-    });
-
-    onFitChange?.({
+    reportFit({
       fits: false,
-      removedSkills: Math.max(0, totalSkillCount - fitState.skillLimit),
-      removedProjectBullets: initialProjectBulletLimits.reduce(
-        (total, originalLimit, index) =>
-          total +
-          Math.max(
-            0,
-            originalLimit - (fitState.projectBulletLimits[index] ?? 0)
-          ),
-        0
-      ),
-      fitLevel,
+      pages: finalPages,
+      mode: "overflow",
     });
   }, [
     blocks,
     fitLevel,
     fitState,
-    initialProjectBulletLimits,
+    initialExperienceBulletLimits,
+    minimumExperienceBulletLimits,
     onFitChange,
-    totalSkillCount,
+    projects.length,
+    skillEntries.length,
   ]);
 
   const blockMap = useMemo(
@@ -625,6 +905,18 @@ function HarvardResume({ parsedData = EMPTY_OBJECT, onFitChange }) {
       data-fit={fitLevel}
       aria-label="Harvard-style resume"
     >
+      <div className="harvard-resume-measurement" aria-hidden="true">
+        {blocks.map((block) => (
+          <div
+            className={block.className}
+            data-resume-block-key={block.key}
+            key={`measure-${block.key}`}
+          >
+            {block.content}
+          </div>
+        ))}
+      </div>
+
       {visiblePages.map((page, pageIndex) => (
         <div className="harvard-resume-page-group" key={`page-${pageIndex}`}>
           {pageIndex > 0 && (

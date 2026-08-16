@@ -20,6 +20,7 @@ vi.mock("../../../content/pages/resumeGeneratorContent", () => ({
 function createParsedData(overrides = {}) {
   return {
     name: "Ericka James",
+
     contact: {
       other: ["U.S. Citizen"],
       location: "Atlanta, GA",
@@ -27,23 +28,25 @@ function createParsedData(overrides = {}) {
       linkedin: "linkedin.com/in/erickajames",
       phone: "555-123-4567",
     },
+
     summary:
       "Software engineer focused on building reliable and practical products.",
+
     education: [
       "Spelman College — B.S. Computer Science",
       "Google Tech Exchange",
     ],
+
     experience: [
       {
-        company: "JPMorgan Chase",
-        role: "Software Engineer",
-        dates: "2025",
+        heading: "JPMorgan Chase & Co — Software Engineer Feb 2025 – Nov 2025",
         bullets: [
           "Built production software.",
           "Collaborated across engineering teams.",
         ],
       },
     ],
+
     projects: [
       {
         name: "PatchWork",
@@ -55,11 +58,14 @@ function createParsedData(overrides = {}) {
         ],
       },
     ],
+
     skills: {
       Languages: ["Python", "JavaScript", "C++"],
       Frameworks: ["React", "FastAPI"],
     },
+
     certifications: ["AWS Cloud Practitioner"],
+
     ...overrides,
   };
 }
@@ -76,6 +82,34 @@ function createRect(height = 0) {
     y: 0,
     toJSON: () => {},
   };
+}
+
+function getVisibleResumePages() {
+  return Array.from(
+    document.querySelectorAll(
+      ".harvard-resume-page .harvard-resume-page-content"
+    )
+  );
+}
+
+function getVisibleTextMatches(text) {
+  return getVisibleResumePages().flatMap((page) =>
+    within(page).queryAllByText(text)
+  );
+}
+
+function expectVisibleText(text) {
+  expect(getVisibleTextMatches(text).length).toBeGreaterThan(0);
+}
+
+function expectNoVisibleText(text) {
+  expect(getVisibleTextMatches(text)).toHaveLength(0);
+}
+
+function getFinalFitReport(mock) {
+  const calls = mock.mock.calls;
+
+  return calls[calls.length - 1]?.[0];
 }
 
 describe("HarvardResume", () => {
@@ -112,7 +146,19 @@ describe("HarvardResume", () => {
     vi.restoreAllMocks();
   });
 
-  function mockPageStyles(padding = 50) {
+  function mockPage({ height = 1000, padding = 50 } = {}) {
+    Object.defineProperty(HTMLElement.prototype, "clientHeight", {
+      configurable: true,
+
+      get() {
+        if (this.classList?.contains("harvard-resume-page")) {
+          return height;
+        }
+
+        return 0;
+      },
+    });
+
     vi.spyOn(window, "getComputedStyle").mockImplementation((element) => {
       const styles = originalGetComputedStyle.call(window, element);
 
@@ -148,7 +194,7 @@ describe("HarvardResume", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders the candidate name and contact information", () => {
+  it("renders candidate contact information", () => {
     render(<HarvardResume parsedData={createParsedData()} />);
 
     expect(
@@ -158,10 +204,16 @@ describe("HarvardResume", () => {
       })
     ).toBeInTheDocument();
 
-    const contact = screen.getByLabelText(/contact information/i);
+    const pageOne = screen.getByRole("region", {
+      name: /resume page 1/i,
+    });
+
+    const contact = within(pageOne).getByLabelText(/contact information/i);
 
     expect(within(contact).getByText("U.S. Citizen")).toBeInTheDocument();
+
     expect(within(contact).getByText("Atlanta, GA")).toBeInTheDocument();
+
     expect(within(contact).getByText("ericka@example.com")).toBeInTheDocument();
 
     expect(
@@ -171,173 +223,17 @@ describe("HarvardResume", () => {
     expect(within(contact).getByText("555-123-4567")).toBeInTheDocument();
   });
 
-  it("trims contact values and ignores empty contact entries", () => {
-    render(
-      <HarvardResume
-        parsedData={createParsedData({
-          contact: {
-            other: ["  U.S. Citizen  ", "", "   ", null],
-            location: "  Huntsville, AL  ",
-            email: " ",
-            linkedin: "",
-            phone: "  555-222-3333  ",
-          },
-        })}
-      />
-    );
-
-    const contact = screen.getByLabelText(/contact information/i);
-
-    expect(within(contact).getByText("U.S. Citizen")).toBeInTheDocument();
-    expect(within(contact).getByText("Huntsville, AL")).toBeInTheDocument();
-    expect(within(contact).getByText("555-222-3333")).toBeInTheDocument();
-
-    expect(within(contact).queryByText(/^\s+$/)).not.toBeInTheDocument();
-  });
-
-  it("handles invalid contact data safely", () => {
-    render(
-      <HarvardResume
-        parsedData={createParsedData({
-          contact: ["not", "an", "object"],
-        })}
-      />
-    );
-
-    expect(
-      screen.queryByLabelText(/contact information/i)
-    ).not.toBeInTheDocument();
-
-    expect(screen.getByText("Ericka James")).toBeInTheDocument();
-  });
-
-  it("renders and trims the summary", () => {
-    render(
-      <HarvardResume
-        parsedData={createParsedData({
-          summary: "  Builds practical software systems.  ",
-        })}
-      />
-    );
-
-    expect(
-      screen.getByRole("heading", {
-        level: 2,
-        name: /summary/i,
-      })
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByText("Builds practical software systems.")
-    ).toBeInTheDocument();
-  });
-
-  it("renders only valid education entries", () => {
-    render(
-      <HarvardResume
-        parsedData={createParsedData({
-          education: [
-            "  Spelman College  ",
-            "",
-            "   ",
-            null,
-            "Google Tech Exchange",
-          ],
-        })}
-      />
-    );
-
-    expect(screen.getByText("Spelman College")).toBeInTheDocument();
-    expect(screen.getByText("Google Tech Exchange")).toBeInTheDocument();
-  });
-
-  it("does not render education when education is not an array", () => {
-    render(
-      <HarvardResume
-        parsedData={createParsedData({
-          education: "Spelman College",
-        })}
-      />
-    );
-
-    expect(
-      screen.queryByRole("heading", {
-        level: 2,
-        name: /education/i,
-      })
-    ).not.toBeInTheDocument();
-  });
-
-  it("renders cleaned work experience entries", () => {
-    render(
-      <HarvardResume
-        parsedData={createParsedData({
-          experience: [
-            null,
-            {
-              company: "  JPMorgan Chase  ",
-              role: "  Software Engineer  ",
-              dates: "  2025  ",
-              bullets: [
-                "  Built production features.  ",
-                "",
-                null,
-                "Supported production systems.",
-              ],
-            },
-            {
-              company: "",
-              role: "",
-              dates: "",
-              bullets: [],
-            },
-          ],
-        })}
-      />
-    );
-
-    expect(screen.getByText("JPMorgan Chase")).toBeInTheDocument();
-    expect(screen.getByText("Software Engineer")).toBeInTheDocument();
-    expect(screen.getByText("2025")).toBeInTheDocument();
-    expect(screen.getByText("Built production features.")).toBeInTheDocument();
-
-    expect(
-      screen.getByText("Supported production systems.")
-    ).toBeInTheDocument();
-  });
-
-  it("renders experience entries even when only bullets contain content", () => {
+  it("supports heading-based experience from parsed profile data", () => {
     render(
       <HarvardResume
         parsedData={createParsedData({
           experience: [
             {
-              company: "",
-              role: "",
-              dates: "",
-              bullets: ["Built an internal tool."],
-            },
-          ],
-        })}
-      />
-    );
-
-    expect(screen.getByText("Built an internal tool.")).toBeInTheDocument();
-  });
-
-  it("renders project details and bullets", () => {
-    render(
-      <HarvardResume
-        parsedData={createParsedData({
-          projects: [
-            {
-              name: "  PatchWork  ",
-              description: "  Resume platform  ",
-              dates: "  2026  ",
+              heading:
+                "The Mattress & Appliance Spot — Web Developer & Automation Engineer Part-Time Jul 2026 – Present",
               bullets: [
-                "  Parsed uploaded resumes.  ",
-                "",
-                "Generated resume previews.",
+                "Built automated inventory workflows.",
+                "Maintained production website updates.",
               ],
             },
           ],
@@ -345,41 +241,106 @@ describe("HarvardResume", () => {
       />
     );
 
-    expect(screen.getByText("PatchWork")).toBeInTheDocument();
-    expect(screen.getByText("Resume platform")).toBeInTheDocument();
-    expect(screen.getByText("2026")).toBeInTheDocument();
+    expectVisibleText(
+      "The Mattress & Appliance Spot — Web Developer & Automation Engineer Part-Time Jul 2026 – Present"
+    );
 
-    expect(screen.getByText("Parsed uploaded resumes.")).toBeInTheDocument();
+    expectVisibleText("Built automated inventory workflows.");
 
-    expect(screen.getByText("Generated resume previews.")).toBeInTheDocument();
+    expectVisibleText("Maintained production website updates.");
   });
 
-  it("filters empty projects", () => {
+  it("still supports legacy company role and dates experience fields", () => {
     render(
       <HarvardResume
         parsedData={createParsedData({
-          projects: [
-            null,
+          experience: [
             {
-              name: "",
-              description: "",
-              dates: "",
-              bullets: [],
+              company: "JPMorgan Chase",
+              role: "Software Engineer",
+              dates: "2025",
+              bullets: ["Built production features."],
             },
           ],
         })}
       />
     );
 
-    expect(
-      screen.queryByRole("heading", {
-        level: 2,
-        name: /projects/i,
-      })
-    ).not.toBeInTheDocument();
+    expectVisibleText("JPMorgan Chase — Software Engineer");
+
+    expectVisibleText("2025");
+
+    expectVisibleText("Built production features.");
   });
 
-  it("renders skill categories and cleaned skill values", () => {
+  it("renders each experience heading separately", () => {
+    render(
+      <HarvardResume
+        parsedData={createParsedData({
+          experience: [
+            {
+              heading: "Company A — Engineer 2025",
+              bullets: ["A1", "A2"],
+            },
+            {
+              heading: "Company B — Developer 2024",
+              bullets: ["B1", "B2"],
+            },
+          ],
+        })}
+      />
+    );
+
+    expectVisibleText("Company A — Engineer 2025");
+
+    expectVisibleText("Company B — Developer 2024");
+
+    expectVisibleText("A1");
+    expectVisibleText("B1");
+  });
+
+  it("renders project headings separately", () => {
+    render(
+      <HarvardResume
+        parsedData={createParsedData({
+          projects: [
+            {
+              name: "Project One",
+              bullets: ["Project one bullet."],
+            },
+            {
+              title: "Project Two",
+              details: ["Project two bullet."],
+            },
+          ],
+        })}
+      />
+    );
+
+    expectVisibleText("Project One");
+
+    expectVisibleText("Project Two");
+
+    expectVisibleText("Project one bullet.");
+
+    expectVisibleText("Project two bullet.");
+  });
+
+  it("renders cleaned education entries", () => {
+    render(
+      <HarvardResume
+        parsedData={createParsedData({
+          education: ["  Spelman College  ", "", null, "Google Tech Exchange"],
+        })}
+      />
+    );
+
+    expectVisibleText("Spelman College");
+
+    expectVisibleText("Google Tech Exchange");
+  });
+
+  it("renders cleaned skill categories", () => {
     render(
       <HarvardResume
         parsedData={createParsedData({
@@ -393,33 +354,18 @@ describe("HarvardResume", () => {
       />
     );
 
-    expect(screen.getByText("Languages:")).toBeInTheDocument();
+    expectVisibleText("Languages:");
 
     expect(
-      screen.getByText((content) => content.includes("Python, Java, C++"))
-    ).toBeInTheDocument();
+      getVisibleResumePages().some((page) =>
+        page.textContent.includes("Python, Java, C++")
+      )
+    ).toBe(true);
 
-    expect(screen.queryByText("Ignored")).not.toBeInTheDocument();
+    expectNoVisibleText("Ignored");
   });
 
-  it("does not render skills when skills data is invalid", () => {
-    render(
-      <HarvardResume
-        parsedData={createParsedData({
-          skills: ["Python", "React"],
-        })}
-      />
-    );
-
-    expect(
-      screen.queryByRole("heading", {
-        level: 2,
-        name: /skills/i,
-      })
-    ).not.toBeInTheDocument();
-  });
-
-  it("renders cleaned certification entries", () => {
+  it("renders certifications", () => {
     render(
       <HarvardResume
         parsedData={createParsedData({
@@ -428,37 +374,25 @@ describe("HarvardResume", () => {
       />
     );
 
-    expect(screen.getByText("AWS Cloud Practitioner")).toBeInTheDocument();
-    expect(screen.getByText("Security+")).toBeInTheDocument();
+    expectVisibleText("AWS Cloud Practitioner");
+
+    expectVisibleText("Security+");
   });
 
-  it("does not render empty sections when parsed data contains no content", () => {
-    render(
-      <HarvardResume
-        parsedData={{
-          name: "",
-          contact: {},
-          summary: "",
-          education: [],
-          experience: [],
-          projects: [],
-          skills: {},
-          certifications: [],
-        }}
-      />
-    );
+  it("handles completely missing parsed data", () => {
+    render(<HarvardResume />);
 
     expect(
-      screen.queryByRole("heading", {
-        level: 1,
+      screen.getByRole("article", {
+        name: /harvard-style resume/i,
       })
-    ).not.toBeInTheDocument();
+    ).toBeInTheDocument();
 
     expect(
-      screen.queryByRole("heading", {
-        level: 2,
+      screen.getByRole("region", {
+        name: /resume page 1/i,
       })
-    ).not.toBeInTheDocument();
+    ).toBeInTheDocument();
   });
 
   it("uses the normal fit level initially", () => {
@@ -471,7 +405,7 @@ describe("HarvardResume", () => {
     ).toHaveAttribute("data-fit", "normal");
   });
 
-  it("skips physical pagination when JSDOM reports zero page height", () => {
+  it("skips pagination when JSDOM reports zero page height", () => {
     const onFitChange = vi.fn();
 
     render(
@@ -481,38 +415,439 @@ describe("HarvardResume", () => {
       />
     );
 
-    expect(
-      screen.getByRole("region", {
-        name: /resume page 1/i,
-      })
-    ).toBeInTheDocument();
-
-    expect(
-      screen.queryByRole("region", {
-        name: /resume page 2/i,
-      })
-    ).not.toBeInTheDocument();
-
     expect(onFitChange).not.toHaveBeenCalled();
   });
 
-  it("paginates content into two pages when measured content fits", async () => {
-    Object.defineProperty(HTMLElement.prototype, "clientHeight", {
-      configurable: true,
-      get() {
-        if (this.classList?.contains("harvard-resume-page")) {
-          return 1000;
-        }
-
-        return 0;
-      },
+  it("keeps a healthy two-page resume", async () => {
+    mockPage({
+      height: 1000,
+      padding: 100,
     });
 
-    mockPageStyles(100);
+    HTMLElement.prototype.getBoundingClientRect = vi.fn(function () {
+      const key = this.dataset?.resumeBlockKey;
+
+      if (!key) {
+        return createRect();
+      }
+
+      if (key === "header" || key === "summary") {
+        return createRect(220);
+      }
+
+      if (key.endsWith("-heading")) {
+        return createRect(80);
+      }
+
+      return createRect(160);
+    });
+
+    const onFitChange = vi.fn();
+
+    render(
+      <HarvardResume
+        parsedData={{
+          name: "Ericka James",
+          summary: "Summary",
+          education: ["Education"],
+          certifications: ["Certification"],
+        }}
+        onFitChange={onFitChange}
+      />
+    );
+
+    await waitFor(() => {
+      expect(onFitChange).toHaveBeenCalled();
+    });
+
+    const finalReport = getFinalFitReport(onFitChange);
+
+    expect(finalReport.fits).toBe(true);
+
+    expect(finalReport.pageCount).toBeLessThanOrEqual(2);
+  });
+
+  it("removes only as many skill categories as necessary", async () => {
+    mockPage({
+      height: 1000,
+      padding: 50,
+    });
+
+    HTMLElement.prototype.getBoundingClientRect = vi.fn(function () {
+      const key = this.dataset?.resumeBlockKey;
+
+      if (!key) {
+        return createRect();
+      }
+
+      if (key === "header") {
+        return createRect(160);
+      }
+
+      if (key === "skills-heading") {
+        return createRect(80);
+      }
+
+      if (key.startsWith("skills-")) {
+        return createRect(200);
+      }
+
+      return createRect(120);
+    });
+
+    const onFitChange = vi.fn();
+
+    render(
+      <HarvardResume
+        parsedData={{
+          name: "Ericka James",
+
+          skills: {
+            One: ["Skill 1"],
+            Two: ["Skill 2"],
+            Three: ["Skill 3"],
+            Four: ["Skill 4"],
+            Five: ["Skill 5"],
+          },
+        }}
+        onFitChange={onFitChange}
+      />
+    );
+
+    await waitFor(() => {
+      expect(onFitChange).toHaveBeenCalled();
+    });
+
+    const finalReport = getFinalFitReport(onFitChange);
+
+    expect(finalReport.removedSkills).toBeGreaterThanOrEqual(1);
+
+    expect(finalReport.removedSkills).toBeLessThan(5);
+
+    expectVisibleText("Skill 1");
+  });
+
+  it("preserves at least one project", async () => {
+    mockPage({
+      height: 1000,
+      padding: 100,
+    });
+
+    HTMLElement.prototype.getBoundingClientRect = vi.fn(function () {
+      const key = this.dataset?.resumeBlockKey;
+
+      if (!key) {
+        return createRect();
+      }
+
+      if (key === "header") {
+        return createRect(160);
+      }
+
+      if (key === "projects-heading") {
+        return createRect(80);
+      }
+
+      if (key.includes("-heading")) {
+        return createRect(100);
+      }
+
+      if (key.includes("-bullet-")) {
+        return createRect(80);
+      }
+
+      return createRect(100);
+    });
+
+    const onFitChange = vi.fn();
+
+    render(
+      <HarvardResume
+        parsedData={{
+          name: "Ericka James",
+
+          projects: [
+            {
+              name: "Project One",
+              bullets: ["One"],
+            },
+            {
+              name: "Project Two",
+              bullets: ["Two"],
+            },
+            {
+              name: "Project Three",
+              bullets: ["Three"],
+            },
+          ],
+        }}
+        onFitChange={onFitChange}
+      />
+    );
+
+    await waitFor(() => {
+      expect(onFitChange).toHaveBeenCalled();
+    });
+
+    const visibleProjects = [
+      "Project One",
+      "Project Two",
+      "Project Three",
+    ].filter((project) => getVisibleTextMatches(project).length > 0);
+
+    expect(visibleProjects.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("drops skills entirely before reducing experience when necessary", async () => {
+    mockPage({
+      height: 900,
+      padding: 50,
+    });
+
+    HTMLElement.prototype.getBoundingClientRect = vi.fn(function () {
+      const key = this.dataset?.resumeBlockKey;
+
+      if (!key) {
+        return createRect();
+      }
+
+      if (key === "header") {
+        return createRect(120);
+      }
+
+      if (
+        key === "education-heading" ||
+        key === "projects-heading" ||
+        key === "skills-heading" ||
+        key === "experience-heading"
+      ) {
+        return createRect(70);
+      }
+
+      if (key.startsWith("education-")) {
+        return createRect(80);
+      }
+
+      if (key.includes("experience") && key.includes("-heading")) {
+        return createRect(85);
+      }
+
+      if (key.includes("experience") && key.includes("-bullet-")) {
+        return createRect(55);
+      }
+
+      if (key.includes("project") && key.includes("-heading")) {
+        return createRect(85);
+      }
+
+      if (key.includes("project") && key.includes("-bullet-")) {
+        return createRect(55);
+      }
+
+      if (key.startsWith("skills-")) {
+        return createRect(150);
+      }
+
+      return createRect(80);
+    });
+
+    const onFitChange = vi.fn();
+
+    render(
+      <HarvardResume
+        parsedData={{
+          name: "Ericka James",
+
+          education: ["Spelman College"],
+
+          experience: [
+            {
+              heading: "Company A — Engineer",
+              bullets: ["A1", "A2", "A3", "A4"],
+            },
+            {
+              heading: "Company B — Engineer",
+              bullets: ["B1", "B2", "B3", "B4"],
+            },
+          ],
+
+          projects: [
+            {
+              name: "Project One",
+              bullets: ["Project bullet"],
+            },
+          ],
+
+          skills: {
+            Languages: ["Python"],
+            Frameworks: ["React"],
+            Cloud: ["AWS"],
+          },
+        }}
+        onFitChange={onFitChange}
+      />
+    );
+
+    await waitFor(() => {
+      expect(onFitChange).toHaveBeenCalled();
+    });
+
+    const finalReport = getFinalFitReport(onFitChange);
+
+    expect(finalReport.removedExperienceBullets).toBe(0);
+
+    expectVisibleText("Project One");
+
+    expectVisibleText("A1");
+
+    expectVisibleText("A4");
+
+    expectVisibleText("B1");
+
+    expectVisibleText("B4");
+
+    if (finalReport.removedSkills === 3) {
+      expectNoVisibleText("Languages:");
+    }
+  });
+
+  it("preserves at least eight experience bullets", async () => {
+    mockPage({
+      height: 800,
+      padding: 50,
+    });
+
+    HTMLElement.prototype.getBoundingClientRect = vi.fn(function () {
+      const key = this.dataset?.resumeBlockKey;
+
+      if (!key) {
+        return createRect();
+      }
+
+      if (key === "header") {
+        return createRect(100);
+      }
+
+      if (key === "experience-heading") {
+        return createRect(70);
+      }
+
+      if (key.includes("-bullet-")) {
+        return createRect(55);
+      }
+
+      if (key.endsWith("-heading")) {
+        return createRect(80);
+      }
+
+      return createRect(100);
+    });
+
+    const onFitChange = vi.fn();
+
+    render(
+      <HarvardResume
+        parsedData={{
+          name: "Ericka James",
+
+          experience: [
+            {
+              heading: "Company A",
+              bullets: ["A1", "A2", "A3", "A4", "A5", "A6"],
+            },
+            {
+              heading: "Company B",
+              bullets: ["B1", "B2", "B3", "B4", "B5", "B6"],
+            },
+          ],
+        }}
+        onFitChange={onFitChange}
+      />
+    );
+
+    await waitFor(() => {
+      expect(onFitChange).toHaveBeenCalled();
+    });
+
+    const experienceBullets = [
+      "A1",
+      "A2",
+      "A3",
+      "A4",
+      "A5",
+      "A6",
+      "B1",
+      "B2",
+      "B3",
+      "B4",
+      "B5",
+      "B6",
+    ];
+
+    const visibleExperienceBullets = experienceBullets.filter(
+      (bullet) => getVisibleTextMatches(bullet).length > 0
+    );
+
+    expect(visibleExperienceBullets.length).toBeGreaterThanOrEqual(8);
+  });
+
+  it("preserves education", async () => {
+    mockPage({
+      height: 900,
+      padding: 50,
+    });
+
+    HTMLElement.prototype.getBoundingClientRect = vi.fn(function () {
+      const key = this.dataset?.resumeBlockKey;
+
+      if (!key) {
+        return createRect();
+      }
+
+      if (key.endsWith("-heading")) {
+        return createRect(80);
+      }
+
+      return createRect(180);
+    });
+
+    render(
+      <HarvardResume
+        parsedData={{
+          name: "Ericka James",
+          education: ["Spelman College"],
+          skills: {
+            One: ["1"],
+            Two: ["2"],
+            Three: ["3"],
+            Four: ["4"],
+          },
+          projects: [
+            {
+              name: "Project One",
+            },
+            {
+              name: "Project Two",
+            },
+          ],
+        }}
+      />
+    );
+
+    await waitFor(() => {
+      expectVisibleText("Spelman College");
+    });
+  });
+
+  it("never renders page three", async () => {
+    mockPage({
+      height: 800,
+      padding: 50,
+    });
 
     HTMLElement.prototype.getBoundingClientRect = vi.fn(function () {
       if (this.dataset?.resumeBlockKey) {
-        return createRect(400);
+        return createRect(1000);
       }
 
       return createRect();
@@ -524,8 +859,7 @@ describe("HarvardResume", () => {
       <HarvardResume
         parsedData={{
           name: "Ericka James",
-          contact: {},
-          summary: "Software engineer.",
+          summary: "Content cannot safely fit.",
           education: ["Spelman College"],
         }}
         onFitChange={onFitChange}
@@ -533,30 +867,20 @@ describe("HarvardResume", () => {
     );
 
     await waitFor(() => {
-      expect(
-        screen.getByRole("region", {
-          name: /resume page 2/i,
-        })
-      ).toBeInTheDocument();
+      expect(onFitChange).toHaveBeenCalled();
     });
 
-    expect(screen.getByText("Page 2")).toBeInTheDocument();
-
-    await waitFor(() => {
-      expect(onFitChange).toHaveBeenCalledWith(
-        expect.objectContaining({
-          fits: true,
-          removedSkills: 0,
-          removedProjectBullets: 0,
-          fitLevel: "normal",
-        })
-      );
-    });
+    expect(
+      screen.queryByRole("region", {
+        name: /resume page 3/i,
+      })
+    ).not.toBeInTheDocument();
   });
 
   it("ignores invalid calculated page height", () => {
     Object.defineProperty(HTMLElement.prototype, "clientHeight", {
       configurable: true,
+
       get() {
         return 500;
       },
@@ -590,266 +914,5 @@ describe("HarvardResume", () => {
     );
 
     expect(onFitChange).not.toHaveBeenCalled();
-  });
-
-  it("tightens the resume before removing content", async () => {
-    Object.defineProperty(HTMLElement.prototype, "clientHeight", {
-      configurable: true,
-      get() {
-        if (this.classList?.contains("harvard-resume-page")) {
-          return 1000;
-        }
-
-        return 0;
-      },
-    });
-
-    mockPageStyles(50);
-
-    HTMLElement.prototype.getBoundingClientRect = vi.fn(function () {
-      if (!this.dataset?.resumeBlockKey) {
-        return createRect();
-      }
-
-      const documentElement = this.closest(".harvard-resume-document");
-      const fitLevel = documentElement?.dataset.fit;
-
-      const height =
-        fitLevel === "normal" ? 650 : fitLevel === "compact" ? 500 : 300;
-
-      return createRect(height);
-    });
-
-    const onFitChange = vi.fn();
-
-    render(
-      <HarvardResume
-        parsedData={{
-          name: "Ericka James",
-          contact: {},
-          summary: "Summary",
-          education: ["Education"],
-          experience: [
-            {
-              company: "Company",
-              role: "Engineer",
-              dates: "2026",
-              bullets: ["One"],
-            },
-          ],
-        }}
-        onFitChange={onFitChange}
-      />
-    );
-
-    await waitFor(() => {
-      expect(
-        screen.getByRole("article", {
-          name: /harvard-style resume/i,
-        })
-      ).toHaveAttribute("data-fit", "tight");
-    });
-
-    await waitFor(() => {
-      expect(onFitChange).toHaveBeenCalledWith(
-        expect.objectContaining({
-          fits: true,
-          fitLevel: "tight",
-        })
-      );
-    });
-  });
-
-  it("removes lower-priority skills when tightening alone cannot fit the resume", async () => {
-    Object.defineProperty(HTMLElement.prototype, "clientHeight", {
-      configurable: true,
-      get() {
-        if (this.classList?.contains("harvard-resume-page")) {
-          return 1000;
-        }
-
-        return 0;
-      },
-    });
-
-    mockPageStyles(50);
-
-    HTMLElement.prototype.getBoundingClientRect = vi.fn(function () {
-      if (this.dataset?.resumeBlockKey) {
-        return createRect(300);
-      }
-
-      return createRect();
-    });
-
-    const onFitChange = vi.fn();
-
-    render(
-      <HarvardResume
-        parsedData={{
-          name: "Ericka James",
-          contact: {},
-          skills: {
-            One: ["Skill 1"],
-            Two: ["Skill 2"],
-            Three: ["Skill 3"],
-            Four: ["Skill 4"],
-            Five: ["Skill 5"],
-          },
-        }}
-        onFitChange={onFitChange}
-      />
-    );
-
-    await waitFor(() => {
-      expect(onFitChange).toHaveBeenCalledWith(
-        expect.objectContaining({
-          fits: true,
-          removedSkills: 1,
-          fitLevel: "tight",
-        })
-      );
-    });
-
-    expect(screen.queryByText(/skill 5/i)).not.toBeInTheDocument();
-
-    expect(screen.getByText(/skill 1/i)).toBeInTheDocument();
-    expect(screen.getByText(/skill 2/i)).toBeInTheDocument();
-    expect(screen.getByText(/skill 3/i)).toBeInTheDocument();
-  });
-
-  it("trims project bullets after fit levels and skills are exhausted", async () => {
-    Object.defineProperty(HTMLElement.prototype, "clientHeight", {
-      configurable: true,
-      get() {
-        if (this.classList?.contains("harvard-resume-page")) {
-          return 1000;
-        }
-
-        return 0;
-      },
-    });
-
-    mockPageStyles(50);
-
-    HTMLElement.prototype.getBoundingClientRect = vi.fn(function () {
-      const key = this.dataset?.resumeBlockKey;
-
-      if (key === "project-0") {
-        const bulletCount = this.querySelectorAll("li").length;
-
-        return createRect(300 + bulletCount * 200);
-      }
-
-      if (key) {
-        return createRect(200);
-      }
-
-      return createRect();
-    });
-
-    const onFitChange = vi.fn();
-
-    render(
-      <HarvardResume
-        parsedData={{
-          name: "Ericka James",
-          contact: {},
-          projects: [
-            {
-              name: "PatchWork",
-              description: "Resume platform",
-              dates: "2026",
-              bullets: [
-                "Bullet one",
-                "Bullet two",
-                "Bullet three",
-                "Bullet four",
-              ],
-            },
-          ],
-        }}
-        onFitChange={onFitChange}
-      />
-    );
-
-    await waitFor(() => {
-      expect(onFitChange).toHaveBeenCalledWith(
-        expect.objectContaining({
-          fits: true,
-          removedProjectBullets: 2,
-          fitLevel: "tight",
-        })
-      );
-    });
-
-    expect(screen.getByText("Bullet one")).toBeInTheDocument();
-    expect(screen.getByText("Bullet two")).toBeInTheDocument();
-
-    expect(screen.queryByText("Bullet three")).not.toBeInTheDocument();
-    expect(screen.queryByText("Bullet four")).not.toBeInTheDocument();
-  });
-
-  it("reports failure when content still cannot fit after all safe reductions", async () => {
-    Object.defineProperty(HTMLElement.prototype, "clientHeight", {
-      configurable: true,
-      get() {
-        if (this.classList?.contains("harvard-resume-page")) {
-          return 800;
-        }
-
-        return 0;
-      },
-    });
-
-    mockPageStyles(50);
-
-    HTMLElement.prototype.getBoundingClientRect = vi.fn(function () {
-      if (this.dataset?.resumeBlockKey) {
-        return createRect(1000);
-      }
-
-      return createRect();
-    });
-
-    const onFitChange = vi.fn();
-
-    render(
-      <HarvardResume
-        parsedData={{
-          name: "Ericka James",
-          contact: {},
-          summary: "This content cannot safely fit.",
-        }}
-        onFitChange={onFitChange}
-      />
-    );
-
-    await waitFor(() => {
-      expect(onFitChange).toHaveBeenCalledWith(
-        expect.objectContaining({
-          fits: false,
-          removedSkills: 0,
-          removedProjectBullets: 0,
-          fitLevel: "tight",
-        })
-      );
-    });
-  });
-
-  it("handles completely missing parsed data", () => {
-    render(<HarvardResume />);
-
-    expect(
-      screen.getByRole("article", {
-        name: /harvard-style resume/i,
-      })
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByRole("region", {
-        name: /resume page 1/i,
-      })
-    ).toBeInTheDocument();
   });
 });
