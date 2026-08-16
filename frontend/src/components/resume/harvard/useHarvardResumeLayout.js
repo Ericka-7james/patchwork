@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import {
   createInitialFitState,
   DENSITY_NORMAL,
@@ -21,6 +21,7 @@ export function useHarvardResumeLayout({
   onFitChange,
 }) {
   const lastReportRef = useRef("");
+  const sourceSignatureRef = useRef(sourceSignature);
 
   const [fitState, setFitState] = useState(() =>
     createInitialFitState({
@@ -30,26 +31,27 @@ export function useHarvardResumeLayout({
     })
   );
 
-  useEffect(() => {
-    lastReportRef.current = "";
-
-    setFitState(
-      createInitialFitState({
-        skillCategoryCount: skillEntries.length,
-        projectCount: projects.length,
-        experienceBulletLimits: initialExperienceBulletLimits,
-      })
-    );
-  }, [
-    sourceSignature,
-    skillEntries.length,
-    projects.length,
-    initialExperienceBulletLimits,
-  ]);
-
   const fitLevel = FIT_LEVELS[fitState.fitLevelIndex];
 
   useLayoutEffect(() => {
+    if (sourceSignatureRef.current !== sourceSignature) {
+      sourceSignatureRef.current = sourceSignature;
+
+      lastReportRef.current = "";
+
+      setFitState(
+        createInitialFitState({
+          skillCategoryCount: skillEntries.length,
+
+          projectCount: projects.length,
+
+          experienceBulletLimits: initialExperienceBulletLimits,
+        })
+      );
+
+      return;
+    }
+
     const documentElement = documentRef.current;
 
     if (!documentElement || blocks.length === 0 || fitState.settled) {
@@ -142,13 +144,21 @@ export function useHarvardResumeLayout({
     function reportFit({ fits, pages, mode }) {
       const report = {
         fits,
+
         pageCount: pages.length,
+
         lastPageFillRatio,
+
         removedSkills,
+
         removedProjects,
+
         removedExperienceBullets,
+
         fitLevel,
+
         density: fitState.density,
+
         layoutMode: mode,
       };
 
@@ -165,17 +175,27 @@ export function useHarvardResumeLayout({
       setFitState((current) => ({
         ...current,
         ...updates,
+
         density: DENSITY_NORMAL,
+
         densityAttempted: false,
+
         pageKeys: [],
       }));
     }
 
+    /*
+     * Cosmetic spacing should never be the reason
+     * content starts getting removed.
+     */
     if (fitState.density !== DENSITY_NORMAL && !layoutAcceptable) {
       setFitState((current) => ({
         ...current,
+
         density: DENSITY_NORMAL,
+
         densityAttempted: true,
+
         pageKeys: [],
       }));
 
@@ -188,8 +208,11 @@ export function useHarvardResumeLayout({
       if (!fitState.densityAttempted && targetDensity !== DENSITY_NORMAL) {
         setFitState((current) => ({
           ...current,
+
           density: targetDensity,
+
           densityAttempted: true,
+
           pageKeys: [],
         }));
 
@@ -198,19 +221,26 @@ export function useHarvardResumeLayout({
 
       setFitState((current) => ({
         ...current,
+
         pageKeys: result.pages,
+
         settled: true,
       }));
 
       reportFit({
         fits: true,
+
         pages: result.pages,
+
         mode: isOnePage ? "one-page" : "two-page",
       });
 
       return;
     }
 
+    /*
+     * Compress layout before removing content.
+     */
     if (fitState.fitLevelIndex < FIT_LEVELS.length - 1) {
       resetDensity({
         fitLevelIndex: fitState.fitLevelIndex + 1,
@@ -219,6 +249,10 @@ export function useHarvardResumeLayout({
       return;
     }
 
+    /*
+     * Skills are reduced first.
+     * Preserve three categories when possible.
+     */
     const minimumSkillCategoryCount = Math.min(
       MIN_SKILL_CATEGORIES,
       skillEntries.length
@@ -232,6 +266,10 @@ export function useHarvardResumeLayout({
       return;
     }
 
+    /*
+     * Projects are reduced next.
+     * Preserve at least one when available.
+     */
     const minimumProjectCount =
       projects.length > 0 ? Math.min(MIN_PROJECTS, projects.length) : 0;
 
@@ -243,6 +281,11 @@ export function useHarvardResumeLayout({
       return;
     }
 
+    /*
+     * If Skills have reached their preferred floor and
+     * Projects have reached theirs, Skills can disappear
+     * entirely before Experience is reduced.
+     */
     if (fitState.skillCategoryLimit > 0) {
       resetDensity({
         skillCategoryLimit: 0,
@@ -251,6 +294,9 @@ export function useHarvardResumeLayout({
       return;
     }
 
+    /*
+     * Experience is the final content reduction.
+     */
     const experienceIndexToTrim = fitState.experienceBulletLimits.findLastIndex(
       (limit, index) => limit > (minimumExperienceBulletLimits[index] ?? 0)
     );
@@ -267,14 +313,22 @@ export function useHarvardResumeLayout({
       return;
     }
 
+    /*
+     * If protected content prevents a stronger one-page
+     * resume, retain the two-page layout instead of
+     * over-trimming.
+     */
     if (pageCount <= 2 && !result.hasOversizedBlock) {
       const targetDensity = getTargetDensity(lastPageFillRatio);
 
       if (!fitState.densityAttempted && targetDensity !== DENSITY_NORMAL) {
         setFitState((current) => ({
           ...current,
+
           density: targetDensity,
+
           densityAttempted: true,
+
           pageKeys: [],
         }));
 
@@ -283,13 +337,17 @@ export function useHarvardResumeLayout({
 
       setFitState((current) => ({
         ...current,
+
         pageKeys: result.pages,
+
         settled: true,
       }));
 
       reportFit({
         fits: true,
+
         pages: result.pages,
+
         mode: "two-page-required",
       });
 
@@ -300,13 +358,17 @@ export function useHarvardResumeLayout({
 
     setFitState((current) => ({
       ...current,
+
       pageKeys: finalPages,
+
       settled: true,
     }));
 
     reportFit({
       fits: false,
+
       pages: finalPages,
+
       mode: "overflow",
     });
   }, [
@@ -319,6 +381,7 @@ export function useHarvardResumeLayout({
     onFitChange,
     projects,
     skillEntries,
+    sourceSignature,
   ]);
 
   return {
