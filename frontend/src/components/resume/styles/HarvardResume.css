@@ -322,6 +322,46 @@
   padding-top: 0;
 }
 
+.harvard-resume-document[data-density="balanced"] {
+  --section-spacing: 7px;
+  --entry-spacing: 5px;
+}
+
+.harvard-resume-document[data-density="roomy"] {
+  --section-spacing: 10px;
+  --entry-spacing: 7px;
+}
+
+.harvard-resume-document[data-fit="normal"][data-density="balanced"] {
+  --section-spacing: 10px;
+  --entry-spacing: 6px;
+}
+
+.harvard-resume-document[data-fit="normal"][data-density="roomy"] {
+  --section-spacing: 13px;
+  --entry-spacing: 8px;
+}
+
+.harvard-resume-document[data-fit="compact"][data-density="balanced"] {
+  --section-spacing: 8px;
+  --entry-spacing: 5px;
+}
+
+.harvard-resume-document[data-fit="compact"][data-density="roomy"] {
+  --section-spacing: 10px;
+  --entry-spacing: 7px;
+}
+
+.harvard-resume-document[data-fit="tight"][data-density="balanced"] {
+  --section-spacing: 6px;
+  --entry-spacing: 4px;
+}
+
+.harvard-resume-document[data-fit="tight"][data-density="roomy"] {
+  --section-spacing: 8px;
+  --entry-spacing: 5px;
+}
+
 @media (max-width: 760px) {
   .harvard-resume-document {
     width: 8.5in;
