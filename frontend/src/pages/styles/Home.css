@@ -1,28 +1,39 @@
 .home-main {
-  width: min(1180px, calc(100% - 40px));
+  width: min(var(--content-width), calc(100% - var(--page-gutter)));
+
   margin: 0 auto;
+
   flex: 1;
 }
 
 .hero {
-  min-height: calc(100vh - 145px);
+  min-height: calc(100vh - 136px);
+
   padding: 48px 0 58px;
+
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(340px, 0.95fr);
+
+  grid-template-columns:
+    minmax(0, 1.05fr)
+    minmax(340px, 0.85fr);
+
   align-items: center;
-  gap: 64px;
+
+  gap: 72px;
 }
 
 .hero-copy {
-  max-width: 680px;
+  max-width: 700px;
 }
 
 .hero h1 {
-  max-width: 680px;
+  max-width: 700px;
+
   margin: 0;
-  font-size: clamp(2.8rem, 5vw, 5rem);
-  line-height: 1;
-  letter-spacing: -0.06em;
+
+  font-size: clamp(3rem, 5.5vw, 5.4rem);
+
+  line-height: 0.97;
 }
 
 .hero h1 span {
@@ -34,11 +45,14 @@
 }
 
 .hero-description {
-  max-width: 610px;
+  max-width: 590px;
+
   margin: 0;
+
   color: var(--text-soft);
-  font-size: 1.05rem;
-  line-height: 1.7;
+
+  font-size: 1rem;
+  line-height: 1.72;
 }
 
 .hero-actions {
@@ -47,31 +61,59 @@
 
 .hero-visual {
   min-height: 430px;
+
   position: relative;
+
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+.hero-visual::before {
+  content: "";
+
+  position: absolute;
+
+  width: 360px;
+  height: 360px;
+
+  border-radius: 50%;
+
+  background: radial-gradient(
+    circle,
+    rgba(238, 225, 138, 0.26),
+    transparent 68%
+  );
+}
+
 .resume-card {
   width: min(350px, 88%);
+
   min-height: 420px;
-  border: 1px solid rgba(85, 107, 47, 0.12);
-  border-radius: 26px;
-  box-shadow: var(--shadow);
+
+  border: 1px solid var(--border);
+
+  border-radius: 22px;
+
+  box-shadow: var(--shadow-large);
 }
 
 .resume-card-back {
   position: absolute;
+
   background: var(--cream);
-  transform: rotate(7deg) translate(28px, -8px);
+
+  transform: rotate(6deg) translate(26px, -8px);
 }
 
 .resume-card-front {
   position: relative;
-  padding: 36px;
+
+  padding: 34px;
+
   background: var(--surface);
-  transform: rotate(-2deg);
+
+  transform: rotate(-1.5deg);
 }
 
 .resume-heading-row {
@@ -82,36 +124,46 @@
 
 .resume-name-block {
   width: 46%;
-  height: 18px;
+  height: 16px;
+
   border-radius: 999px;
+
   background: var(--olive);
 }
 
 .resume-dot {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
+
   border-radius: 50%;
+
   background: var(--yellow);
 }
 
 .resume-section {
-  margin-top: 42px;
+  margin-top: 38px;
 }
 
 .resume-label {
   width: 26%;
-  height: 8px;
-  margin-bottom: 16px;
+  height: 7px;
+
+  margin-bottom: 15px;
+
   border-radius: 999px;
+
   background: var(--brown);
 }
 
 .resume-line {
   width: 100%;
-  height: 7px;
-  margin-top: 11px;
+  height: 6px;
+
+  margin-top: 10px;
+
   border-radius: 999px;
-  background: #e6decf;
+
+  background: #e7e4da;
 }
 
 .resume-line-short {
@@ -124,95 +176,55 @@
 
 .resume-badge {
   position: absolute;
-  right: -20px;
-  bottom: 34px;
-  padding: 13px 16px;
-  border-radius: 14px;
+
+  right: -18px;
+  bottom: 32px;
+
+  padding: 12px 15px;
+
+  border-radius: 12px;
+
   background: var(--yellow);
-  font-size: 0.78rem;
-  font-weight: 800;
+
+  color: var(--text-strong);
+
+  font-size: 0.75rem;
+  font-weight: 850;
+
+  box-shadow: var(--shadow-small);
 }
 
 @media (max-width: 900px) {
   .hero {
     grid-template-columns: 1fr;
-    min-height: calc(100vh - 140px);
-    padding: 48px 0;
+
+    min-height: calc(100vh - 132px);
   }
 
   .hero-visual {
     display: none;
   }
-
-  .hero-copy {
-    max-width: 720px;
-  }
-
-  .hero h1 {
-    font-size: clamp(2.7rem, 8vw, 4.4rem);
-  }
 }
 
 @media (max-width: 600px) {
-  .home-main {
-    width: min(100% - 28px, 1180px);
-    display: flex;
-  }
-
   .hero {
-    width: 100%;
-    min-height: calc(100svh - 150px);
-    padding: 0 0 36px;
+    min-height: calc(100svh - 136px);
+
+    padding: 16px 0 34px;
+
     display: flex;
     align-items: center;
   }
 
-  .hero-copy {
-    width: 100%;
-    max-width: none;
-    transform: translateY(-4vh);
-  }
-
   .hero h1 {
-    font-size: clamp(2.45rem, 11vw, 3.4rem);
-    line-height: 1.02;
-  }
-
-  .hero-details {
-    margin-top: 24px;
+    font-size: clamp(2.6rem, 12vw, 3.6rem);
   }
 
   .hero-description {
-    max-width: none;
-    font-size: 0.94rem;
-    line-height: 1.6;
+    font-size: 0.93rem;
   }
 
   .hero-actions {
-    margin-top: 20px;
-    display: flex;
-    justify-content: flex-end;
-  }
-
-  .hero-actions .button {
-    min-height: 44px;
-    padding: 0 17px;
-    white-space: nowrap;
-    font-size: 0.82rem;
-  }
-}
-
-@media (max-width: 420px) {
-  .hero-copy {
-    transform: translateY(-3vh);
-  }
-
-  .hero-description {
-    font-size: 0.9rem;
-  }
-
-  .hero-actions .button {
-    padding: 0 14px;
-    font-size: 0.78rem;
+    margin-top: 22px;
   }
 }

@@ -10,6 +10,7 @@ import "./styles/ResumeGenerator.css";
 
 function ResumeGenerator() {
   const navigate = useNavigate();
+
   const { user, profile, signOut } = useAuth();
 
   const [resume, setResume] = useState(null);
@@ -80,16 +81,22 @@ function ResumeGenerator() {
 
     try {
       await signOut();
-      navigate(routes.login, { replace: true });
+
+      navigate(routes.login, {
+        replace: true,
+      });
     } catch (error) {
       setLogoutError(error.message || errors.logoutFallback);
+
       setIsLoggingOut(false);
     }
   }
 
   const removedContent =
     fitReport &&
-    (fitReport.removedSkills > 0 || fitReport.removedProjectBullets > 0);
+    (fitReport.removedSkills > 0 ||
+      fitReport.removedProjects > 0 ||
+      fitReport.removedExperienceBullets > 0);
 
   return (
     <div className="site-shell">
@@ -103,7 +110,9 @@ function ResumeGenerator() {
       <main className="resume-generator-main">
         <section className="resume-generator-intro">
           <p className="eyebrow">{intro.eyebrow}</p>
+
           <h1>{intro.heading}</h1>
+
           <p>{intro.description}</p>
         </section>
 
@@ -149,24 +158,39 @@ function ResumeGenerator() {
 
             {removedContent && (
               <div className="resume-generator-adjustment" role="status">
-                <strong>Resume adjusted to fit within two pages.</strong>
+                <strong>
+                  Resume adjusted for a professional{" "}
+                  {fitReport.pageCount === 1 ? "one-page" : "two-page"} layout.
+                </strong>
 
                 <ul>
                   {fitReport.removedSkills > 0 && (
                     <li>
-                      {fitReport.removedSkills} lower-priority{" "}
-                      {fitReport.removedSkills === 1 ? "skill" : "skills"}{" "}
+                      {fitReport.removedSkills} lower-priority skill{" "}
+                      {fitReport.removedSkills === 1
+                        ? "category was"
+                        : "categories were"}{" "}
                       removed from the generated resume.
                     </li>
                   )}
 
-                  {fitReport.removedProjectBullets > 0 && (
+                  {fitReport.removedProjects > 0 && (
                     <li>
-                      {fitReport.removedProjectBullets}{" "}
-                      {fitReport.removedProjectBullets === 1
-                        ? "project bullet"
-                        : "project bullets"}{" "}
+                      {fitReport.removedProjects} lower-priority{" "}
+                      {fitReport.removedProjects === 1
+                        ? "project was"
+                        : "projects were"}{" "}
                       removed from the generated resume.
+                    </li>
+                  )}
+
+                  {fitReport.removedExperienceBullets > 0 && (
+                    <li>
+                      {fitReport.removedExperienceBullets} experience{" "}
+                      {fitReport.removedExperienceBullets === 1
+                        ? "bullet was"
+                        : "bullets were"}{" "}
+                      removed after skills and projects were reduced.
                     </li>
                   )}
                 </ul>
@@ -182,9 +206,9 @@ function ResumeGenerator() {
                 </strong>
 
                 <span>
-                  PatchWork preserved your contact information, summary,
-                  education, work experience, certifications, and project
-                  details instead of cutting them off.
+                  PatchWork preserved the highest-priority resume content and
+                  prevented a third generated page. Review the source content
+                  before exporting.
                 </span>
               </div>
             )}

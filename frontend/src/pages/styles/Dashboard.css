@@ -1,42 +1,46 @@
 .dashboard-main {
-  width: min(900px, calc(100% - 40px));
+  width: min(920px, calc(100% - var(--page-gutter)));
+
   margin: 0 auto;
+
   padding: 64px 0 80px;
+
   flex: 1;
 }
 
 .dashboard-intro {
-  max-width: 760px;
-  margin: 0 auto;
-  text-align: center;
-}
+  max-width: 720px;
 
-.dashboard-intro .eyebrow {
-  margin-bottom: 14px;
+  margin: 0 auto;
+
+  text-align: center;
 }
 
 .dashboard-intro h1 {
   margin: 0;
-  font-size: clamp(2.8rem, 6vw, 5.3rem);
-  line-height: 0.98;
-  letter-spacing: -0.065em;
+
+  font-size: clamp(2.8rem, 5.5vw, 4.8rem);
+
+  line-height: 0.99;
 }
 
 .dashboard-intro > p:last-child {
-  max-width: 660px;
-  margin: 22px auto 0;
+  max-width: 620px;
+
+  margin: 20px auto 0;
+
   color: var(--text-soft);
-  font-size: 1.05rem;
+
+  font-size: 0.98rem;
   line-height: 1.7;
 }
 
 .resume-upload-card {
-  margin: 52px auto 0;
-  padding: 34px;
-  border: 1px solid var(--border);
-  border-radius: 28px;
-  background: var(--surface);
-  box-shadow: var(--shadow);
+  margin: 44px auto 0;
+
+  padding: 28px;
+
+  border-radius: var(--radius-large);
 }
 
 .resume-upload-heading {
@@ -45,39 +49,62 @@
 
 .resume-upload-heading h2 {
   margin: 0;
-  font-size: 1.75rem;
-  letter-spacing: -0.035em;
+
+  color: var(--text-strong);
+
+  font-size: 1.6rem;
+  font-weight: 850;
+
+  letter-spacing: -0.04em;
 }
 
 .resume-upload-heading > p:last-child {
-  max-width: 620px;
-  margin: 12px auto 0;
+  max-width: 600px;
+
+  margin: 10px auto 0;
+
   color: var(--text-soft);
+
+  font-size: 0.9rem;
   line-height: 1.65;
 }
 
 .resume-upload-placeholder {
-  min-height: 240px;
-  margin-top: 28px;
-  padding: 36px 24px;
-  border: 1.5px dashed rgba(85, 107, 47, 0.35);
-  border-radius: 22px;
-  background: rgba(255, 228, 181, 0.18);
+  min-height: 220px;
+
+  margin-top: 25px;
+  padding: 32px 22px;
+
+  border: 1px dashed rgba(97, 116, 61, 0.32);
+
+  border-radius: 18px;
+
+  background: linear-gradient(
+    180deg,
+    rgba(243, 227, 195, 0.15),
+    rgba(242, 245, 235, 0.58)
+  );
+
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+
   text-align: center;
 }
 
 .resume-upload-placeholder > strong {
-  font-size: 1.1rem;
+  color: var(--text-strong);
+
+  font-size: 1.04rem;
 }
 
 .resume-upload-placeholder > span {
   margin-top: 6px;
+
   color: var(--text-soft);
-  font-size: 0.88rem;
+
+  font-size: 0.84rem;
 }
 
 .resume-file-input {
@@ -85,92 +112,106 @@
 }
 
 .resume-upload-placeholder .button {
-  margin-top: 22px;
+  margin-top: 20px;
 }
 
 .resume-selected-file {
-  margin-top: 18px;
+  margin-top: 17px;
+
   display: flex;
   flex-direction: column;
   align-items: center;
+
   gap: 4px;
 }
 
 .resume-selected-file span {
-  color: var(--text-soft);
-  font-size: 0.78rem;
-  font-weight: 650;
+  color: var(--olive);
+
+  font-size: 0.72rem;
+  font-weight: 800;
+
+  letter-spacing: 0.08em;
+
   text-transform: uppercase;
-  letter-spacing: 0.06em;
 }
 
 .resume-selected-file strong {
   max-width: 100%;
+
   overflow-wrap: anywhere;
-  font-size: 0.95rem;
+
+  font-size: 0.92rem;
 }
 
-.resume-upload-error {
-  width: min(100%, 520px);
-  margin-top: 18px;
-  padding: 12px 16px;
-  border: 1px solid rgba(139, 69, 19, 0.24);
-  border-radius: 14px;
-  background: #fff1e6;
-  color: var(--brown);
-  font-size: 0.9rem;
+.resume-upload-error,
+.resume-upload-success,
+.dashboard-alert {
+  border-radius: 12px;
+
+  font-size: 0.86rem;
   font-weight: 650;
 }
 
-.resume-submit-button {
-  margin-top: 14px;
+.resume-upload-error,
+.resume-upload-success {
+  width: min(100%, 520px);
+
+  margin-top: 17px;
+  padding: 11px 15px;
+}
+
+.resume-upload-error,
+.dashboard-alert {
+  border: 1px solid rgba(138, 87, 44, 0.18);
+
+  background: #fff6ec;
+
+  color: var(--brown-dark);
 }
 
 .resume-upload-success {
-  width: min(100%, 520px);
-  margin-top: 18px;
-  padding: 12px 16px;
-  border: 1px solid rgba(85, 107, 47, 0.28);
-  border-radius: 14px;
-  background: rgba(214, 229, 189, 0.35);
-  color: var(--olive);
-  font-size: 0.9rem;
-  font-weight: 650;
+  border: 1px solid rgba(97, 116, 61, 0.2);
+
+  background: var(--surface-olive);
+
+  color: var(--olive-dark);
+}
+
+.resume-submit-button {
+  margin-top: 13px;
 }
 
 .dashboard-alert {
-  margin-top: 28px;
-  padding: 14px 18px;
-  border: 1px solid rgba(139, 69, 19, 0.24);
-  border-radius: 14px;
-  background: #fff1e6;
-  color: var(--brown);
-  font-weight: 650;
+  margin-top: 26px;
+
+  padding: 13px 16px;
 }
 
 @media (max-width: 600px) {
   .dashboard-main {
-    width: min(calc(100% - 28px), 900px);
-    padding: 38px 0 56px;
+    width: min(calc(100% - 28px), 920px);
+
+    padding: 40px 0 56px;
   }
 
   .dashboard-intro h1 {
-    font-size: clamp(2.6rem, 13vw, 4rem);
-  }
-
-  .dashboard-intro > p:last-child {
-    font-size: 0.95rem;
+    font-size: clamp(2.5rem, 12vw, 3.7rem);
   }
 
   .resume-upload-card {
-    margin-top: 36px;
-    padding: 24px 18px;
-    border-radius: 22px;
+    margin-top: 34px;
+
+    padding: 20px 16px;
+
+    border-radius: 19px;
   }
 
   .resume-upload-placeholder {
-    min-height: 210px;
-    padding: 30px 18px;
-    border-radius: 18px;
+    min-height: 200px;
+
+    padding: 27px 16px;
+
+    border-radius: 16px;
   }
 }

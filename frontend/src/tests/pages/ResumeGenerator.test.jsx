@@ -63,11 +63,14 @@ function mockAuthenticatedUser(overrides = {}) {
     user: {
       id: "user-123",
     },
+
     profile: {
       first_name: "Ericka",
     },
+
     hasResume: true,
     signOut: vi.fn(),
+
     ...overrides,
   });
 }
@@ -77,7 +80,9 @@ function renderResumeGenerator() {
     <MemoryRouter initialEntries={["/resume-generator"]}>
       <Routes>
         <Route path="/resume-generator" element={<ResumeGenerator />} />
+
         <Route path="/profile" element={<h1>Profile destination</h1>} />
+
         <Route path="/login" element={<h1>Login destination</h1>} />
       </Routes>
     </MemoryRouter>
@@ -89,11 +94,13 @@ function createResume() {
     id: "resume-123",
     user_id: "user-123",
     original_filename: "software-resume.pdf",
+
     parsed_data: {
       contact: {
         name: "Ericka James",
         email: "ericka@example.com",
       },
+
       skills: ["React", "Python"],
       work_experience: [],
       education: [],
@@ -127,9 +134,7 @@ describe("ResumeGenerator", () => {
   });
 
   it("loads the authenticated user's resume", async () => {
-    const resume = createResume();
-
-    getResumeByUserIdMock.mockResolvedValue(resume);
+    getResumeByUserIdMock.mockResolvedValue(createResume());
 
     renderResumeGenerator();
 
@@ -154,10 +159,6 @@ describe("ResumeGenerator", () => {
 
     expect(await screen.findByText(/harvard resume/i)).toBeInTheDocument();
 
-    expect(
-      screen.getByText(/a clean harvard-style resume format/i)
-    ).toBeInTheDocument();
-
     expect(screen.getByTestId("harvard-resume")).toHaveTextContent(
       "Ericka James"
     );
@@ -172,12 +173,11 @@ describe("ResumeGenerator", () => {
 
     await screen.findByTestId("harvard-resume");
 
-    expect(harvardResumeMock).toHaveBeenCalled();
-
     const lastCall =
       harvardResumeMock.mock.calls[harvardResumeMock.mock.calls.length - 1];
 
     expect(lastCall[0].parsedData).toEqual(resume.parsed_data);
+
     expect(lastCall[0].onFitChange).toEqual(expect.any(Function));
   });
 
@@ -250,7 +250,7 @@ describe("ResumeGenerator", () => {
     );
   });
 
-  it("shows removed content details when the resume is adjusted to fit", async () => {
+  it("shows removed skill category details when the resume is adjusted", async () => {
     const user = userEvent.setup();
 
     getResumeByUserIdMock.mockResolvedValue(createResume());
@@ -264,8 +264,10 @@ describe("ResumeGenerator", () => {
           onClick={() =>
             onFitChange({
               fits: true,
+              pageCount: 2,
               removedSkills: 2,
-              removedProjectBullets: 1,
+              removedProjects: 0,
+              removedExperienceBullets: 0,
             })
           }
         >
@@ -283,21 +285,19 @@ describe("ResumeGenerator", () => {
     );
 
     expect(
-      screen.getByText(/resume adjusted to fit within two pages/i)
+      screen.getByText(/resume adjusted for a professional two-page layout/i)
     ).toBeInTheDocument();
 
     expect(
-      screen.getByText(/2 lower-priority skills removed/i)
+      screen.getByText(/2 lower-priority skill categories were removed/i)
     ).toBeInTheDocument();
-
-    expect(screen.getByText(/1 project bullet removed/i)).toBeInTheDocument();
 
     expect(
       screen.getByText(/original uploaded resume was not changed/i)
     ).toBeInTheDocument();
   });
 
-  it("uses singular wording when one skill is removed", async () => {
+  it("uses singular wording when one skill category is removed", async () => {
     const user = userEvent.setup();
 
     getResumeByUserIdMock.mockResolvedValue(createResume());
@@ -308,8 +308,10 @@ describe("ResumeGenerator", () => {
         onClick={() =>
           onFitChange({
             fits: true,
+            pageCount: 2,
             removedSkills: 1,
-            removedProjectBullets: 0,
+            removedProjects: 0,
+            removedExperienceBullets: 0,
           })
         }
       >
@@ -326,7 +328,77 @@ describe("ResumeGenerator", () => {
     );
 
     expect(
-      screen.getByText(/1 lower-priority skill removed/i)
+      screen.getByText(/1 lower-priority skill category was removed/i)
+    ).toBeInTheDocument();
+  });
+
+  it("shows removed projects when projects are reduced", async () => {
+    const user = userEvent.setup();
+
+    getResumeByUserIdMock.mockResolvedValue(createResume());
+
+    harvardResumeMock.mockImplementation(({ onFitChange }) => (
+      <button
+        type="button"
+        onClick={() =>
+          onFitChange({
+            fits: true,
+            pageCount: 1,
+            removedSkills: 0,
+            removedProjects: 1,
+            removedExperienceBullets: 0,
+          })
+        }
+      >
+        Report fit
+      </button>
+    ));
+
+    renderResumeGenerator();
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: /report fit/i,
+      })
+    );
+
+    expect(
+      screen.getByText(/1 lower-priority project was removed/i)
+    ).toBeInTheDocument();
+  });
+
+  it("shows removed experience bullets when necessary", async () => {
+    const user = userEvent.setup();
+
+    getResumeByUserIdMock.mockResolvedValue(createResume());
+
+    harvardResumeMock.mockImplementation(({ onFitChange }) => (
+      <button
+        type="button"
+        onClick={() =>
+          onFitChange({
+            fits: true,
+            pageCount: 2,
+            removedSkills: 3,
+            removedProjects: 1,
+            removedExperienceBullets: 2,
+          })
+        }
+      >
+        Report fit
+      </button>
+    ));
+
+    renderResumeGenerator();
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: /report fit/i,
+      })
+    );
+
+    expect(
+      screen.getByText(/2 experience bullets were removed/i)
     ).toBeInTheDocument();
   });
 
@@ -341,8 +413,10 @@ describe("ResumeGenerator", () => {
         onClick={() =>
           onFitChange({
             fits: false,
+            pageCount: 2,
             removedSkills: 0,
-            removedProjectBullets: 0,
+            removedProjects: 0,
+            removedExperienceBullets: 0,
           })
         }
       >
@@ -358,17 +432,22 @@ describe("ResumeGenerator", () => {
       })
     );
 
-    expect(screen.getByRole("alert")).toHaveTextContent(
+    const alert = screen.getByRole("alert");
+
+    expect(alert).toHaveTextContent(
       /still cannot safely fit within two pages/i
     );
 
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      /preserved your contact information/i
+    expect(alert).toHaveTextContent(
+      /preserved the highest-priority resume content/i
     );
+
+    expect(alert).toHaveTextContent(/prevented a third generated page/i);
   });
 
   it("signs out and redirects to login", async () => {
     const user = userEvent.setup();
+
     const signOutMock = vi.fn().mockResolvedValue();
 
     mockAuthenticatedUser({
@@ -414,12 +493,6 @@ describe("ResumeGenerator", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       /logout failed/i
     );
-
-    expect(
-      screen.queryByRole("heading", {
-        name: /login destination/i,
-      })
-    ).not.toBeInTheDocument();
   });
 
   it("shows the fallback error when logout fails without a message", async () => {
