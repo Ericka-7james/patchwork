@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import LoadingOverlay from "../common/LoadingOverlay";
 import "./styles/ExperienceModal.css";
 
 function createDraft(experience) {
@@ -13,9 +14,11 @@ function createDraft(experience) {
 function ExperienceModal({ experience, onClose, onApply }) {
   const [draft, setDraft] = useState(() => createDraft(experience));
 
+  const [isSaving, setIsSaving] = useState(false);
+
   useEffect(() => {
     function handleKeyDown(event) {
-      if (event.key === "Escape") {
+      if (event.key === "Escape" && !isSaving) {
         onClose();
       }
     }
@@ -25,7 +28,7 @@ function ExperienceModal({ experience, onClose, onApply }) {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onClose]);
+  }, [isSaving, onClose]);
 
   if (!experience) {
     return null;
@@ -41,6 +44,7 @@ function ExperienceModal({ experience, onClose, onApply }) {
   function handleBulletChange(index, value) {
     setDraft((currentDraft) => ({
       ...currentDraft,
+
       bullets: currentDraft.bullets.map((bullet, bulletIndex) =>
         bulletIndex === index ? value : bullet
       ),
@@ -50,6 +54,7 @@ function ExperienceModal({ experience, onClose, onApply }) {
   function handleAddBullet() {
     setDraft((currentDraft) => ({
       ...currentDraft,
+
       bullets: [...currentDraft.bullets, ""],
     }));
   }
@@ -57,6 +62,7 @@ function ExperienceModal({ experience, onClose, onApply }) {
   function handleRemoveBullet(index) {
     setDraft((currentDraft) => ({
       ...currentDraft,
+
       bullets: currentDraft.bullets.filter(
         (_, bulletIndex) => bulletIndex !== index
       ),
@@ -70,8 +76,12 @@ function ExperienceModal({ experience, onClose, onApply }) {
     }));
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
+
+    if (isSaving) {
+      return;
+    }
 
     const heading = draft.heading.trim();
 
@@ -79,18 +89,29 @@ function ExperienceModal({ experience, onClose, onApply }) {
       return;
     }
 
-    onApply({
+    const nextExperience = {
       ...draft,
+
       heading,
+
       bullets: draft.bullets
         .map((bullet) => (typeof bullet === "string" ? bullet.trim() : ""))
         .filter(Boolean),
+
       hidden: draft.hidden === true,
-    });
+    };
+
+    setIsSaving(true);
+
+    try {
+      await onApply(nextExperience);
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   function handleOverlayMouseDown(event) {
-    if (event.target === event.currentTarget) {
+    if (event.target === event.currentTarget && !isSaving) {
       onClose();
     }
   }
@@ -105,7 +126,10 @@ function ExperienceModal({ experience, onClose, onApply }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="experience-modal-title"
+        aria-busy={isSaving}
       >
+        <LoadingOverlay isLoading={isSaving} message="Saving your changes..." />
+
         <div className="experience-modal-header">
           <div>
             <span className="experience-modal-eyebrow">Work experience</span>
@@ -118,6 +142,7 @@ function ExperienceModal({ experience, onClose, onApply }) {
             className="experience-modal-close"
             aria-label="Close experience editor"
             onClick={onClose}
+            disabled={isSaving}
           >
             ×
           </button>
@@ -132,6 +157,7 @@ function ExperienceModal({ experience, onClose, onApply }) {
               onChange={handleHeadingChange}
               rows={3}
               required
+              disabled={isSaving}
             />
           </label>
 
@@ -143,6 +169,7 @@ function ExperienceModal({ experience, onClose, onApply }) {
                 type="button"
                 className="button button-small button-outline"
                 onClick={handleAddBullet}
+                disabled={isSaving}
               >
                 Add bullet
               </button>
@@ -162,6 +189,7 @@ function ExperienceModal({ experience, onClose, onApply }) {
                       }
                       rows={3}
                       aria-label={`Bullet ${index + 1}`}
+                      disabled={isSaving}
                     />
 
                     <button
@@ -169,6 +197,7 @@ function ExperienceModal({ experience, onClose, onApply }) {
                       className="experience-modal-remove"
                       onClick={() => handleRemoveBullet(index)}
                       aria-label={`Remove bullet ${index + 1}`}
+                      disabled={isSaving}
                     >
                       Remove
                     </button>
@@ -187,6 +216,7 @@ function ExperienceModal({ experience, onClose, onApply }) {
               type="button"
               className="button button-small button-outline"
               onClick={handleVisibilityToggle}
+              disabled={isSaving}
             >
               {draft.hidden ? "Show on resume" : "Hide from resume"}
             </button>
@@ -196,6 +226,7 @@ function ExperienceModal({ experience, onClose, onApply }) {
                 type="button"
                 className="button button-small button-outline"
                 onClick={onClose}
+                disabled={isSaving}
               >
                 Cancel
               </button>
@@ -203,7 +234,7 @@ function ExperienceModal({ experience, onClose, onApply }) {
               <button
                 type="submit"
                 className="button button-small"
-                disabled={!draft.heading.trim()}
+                disabled={!draft.heading.trim() || isSaving}
               >
                 Done
               </button>
