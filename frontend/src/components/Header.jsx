@@ -17,7 +17,13 @@ function Header({
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const { brand, header } = COMPONENT_CONTENT;
+
   const { actions, navigationLabels, routes, signedInLabel } = header;
+
+  const userMenuLabel =
+    typeof firstName === "string" && firstName.trim()
+      ? firstName.trim()
+      : "Account";
 
   function toggleUserMenu() {
     setIsUserMenuOpen((currentValue) => !currentValue);
@@ -29,7 +35,7 @@ function Header({
 
   return (
     <header className="navbar">
-      <Link to={routes.home} className="brand">
+      <Link to={routes.home} className="brand" onClick={closeUserMenu}>
         {brand.firstPart}
         <span>{brand.secondPart}</span>
       </Link>
@@ -84,64 +90,62 @@ function Header({
 
       {variant === "app" && (
         <nav className="nav-actions" aria-label={navigationLabels.app}>
-          {firstName && (
-            <div className="app-user-menu">
-              <button
-                type="button"
-                className="nav-link app-user-name app-user-menu-trigger"
-                aria-label={`${signedInLabel} ${firstName}`}
-                aria-expanded={isUserMenuOpen}
-                aria-haspopup="menu"
-                onClick={toggleUserMenu}
-                title={firstName}
+          <div className="app-user-menu">
+            <button
+              type="button"
+              className="nav-link app-user-name app-user-menu-trigger"
+              aria-label={`${signedInLabel} ${userMenuLabel}`}
+              aria-expanded={isUserMenuOpen}
+              aria-haspopup="menu"
+              onClick={toggleUserMenu}
+              title={userMenuLabel}
+            >
+              <span>{userMenuLabel}</span>
+
+              <span className="app-user-menu-chevron" aria-hidden="true">
+                ▾
+              </span>
+            </button>
+
+            {isUserMenuOpen && (
+              <div
+                className="app-user-dropdown"
+                role="menu"
+                aria-label={`${userMenuLabel} account menu`}
               >
-                <span>{firstName}</span>
-
-                <span className="app-user-menu-chevron" aria-hidden="true">
-                  ▾
-                </span>
-              </button>
-
-              {isUserMenuOpen && (
-                <div
-                  className="app-user-dropdown"
-                  role="menu"
-                  aria-label={`${firstName} account menu`}
+                <Link
+                  to={routes.dashboard}
+                  className="app-user-dropdown-link"
+                  role="menuitem"
+                  onClick={closeUserMenu}
                 >
-                  <Link
-                    to={routes.dashboard}
-                    className="app-user-dropdown-link"
-                    role="menuitem"
-                    onClick={closeUserMenu}
-                  >
-                    {actions.dashboard}
-                  </Link>
+                  {actions.dashboard}
+                </Link>
 
-                  {hasResume && (
-                    <>
-                      <Link
-                        to={routes.profile}
-                        className="app-user-dropdown-link"
-                        role="menuitem"
-                        onClick={closeUserMenu}
-                      >
-                        {actions.profile}
-                      </Link>
+                {hasResume && (
+                  <>
+                    <Link
+                      to={routes.profile}
+                      className="app-user-dropdown-link"
+                      role="menuitem"
+                      onClick={closeUserMenu}
+                    >
+                      {actions.profile}
+                    </Link>
 
-                      <Link
-                        to={routes.resumeGenerator}
-                        className="app-user-dropdown-link"
-                        role="menuitem"
-                        onClick={closeUserMenu}
-                      >
-                        {actions.resumeGenerator}
-                      </Link>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+                    <Link
+                      to={routes.resumeGenerator}
+                      className="app-user-dropdown-link"
+                      role="menuitem"
+                      onClick={closeUserMenu}
+                    >
+                      {actions.resumeGenerator}
+                    </Link>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
 
           <button
             type="button"
