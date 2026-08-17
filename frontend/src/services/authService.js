@@ -16,3 +16,28 @@ export async function signInWithGoogle() {
 
   return data;
 }
+
+export async function connectGmail() {
+  const redirectTo = `${window.location.origin}/job-review`;
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+
+    options: {
+      redirectTo,
+
+      scopes: "https://www.googleapis.com/auth/gmail.readonly",
+
+      queryParams: {
+        access_type: "offline",
+        prompt: "consent",
+      },
+    },
+  });
+
+  if (error) {
+    throw new Error(error.message || "Unable to connect Gmail.");
+  }
+
+  return data;
+}

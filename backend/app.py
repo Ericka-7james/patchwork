@@ -24,6 +24,13 @@ from parsing.extract import (
 from parsing.structure import (
     parse_resume_structure,
 )
+from services.gmail_service import (
+    fetch_job_messages,
+)
+from services.job_review_service import (
+    build_job_application,
+    save_job_applications,
+)
 from services.resume_service import (
     download_resume_file,
     get_resume_by_id,
@@ -33,7 +40,9 @@ from services.resume_service import (
 
 
 class ExperienceUpdate(BaseModel):
-    heading: str = Field(min_length=1)
+    heading: str = Field(
+        min_length=1
+    )
 
     bullets: list[str] = Field(
         default_factory=list
@@ -71,7 +80,179 @@ async def get_current_user(
 ):
     return {
         "id": user["id"],
-        "email": user.get("email"),
+        "email": user.get(
+            "email"
+        ),
+    }
+
+
+@app.post(
+    "/api/job-review/sync"
+)
+async def sync_job_review(
+    authorization: str | None = Header(
+        default=None
+    ),
+    google_access_token: str | None = Header(
+        default=None,
+        alias=(
+            "X-Google-Access-Token"
+        ),
+    ),
+    user: dict = Depends(
+        get_authenticated_user
+    ),
+):
+    access_token = (
+        extract_bearer_token(
+            authorization
+        )
+    )
+
+    if not google_access_token:
+        raise HTTPException(
+            status_code=(
+                status.HTTP_400_BAD_REQUEST
+            ),
+            detail=(
+                "Connect Gmail before "
+                "syncing job applications."
+            ),
+        )
+
+    try:
+        messages = (
+            await fetch_job_messages(
+                google_access_token
+            )
+        )
+
+    except httpx.HTTPStatusError as error:
+        if (
+            error.response.status_code
+            == status.HTTP_401_UNAUTHORIZED
+        ):
+            raise HTTPException(
+                status_code=(
+                    status.HTTP_401_UNAUTHORIZED
+                ),
+                detail=(
+                    "Your Gmail connection "
+                    "expired. Reconnect Gmail "
+                    "and try again."
+                ),
+            ) from error
+
+        if (
+            error.response.status_code
+            == status.HTTP_403_FORBIDDEN
+        ):
+            raise HTTPException(
+                status_code=(
+                    status.HTTP_403_FORBIDDEN
+                ),
+                detail=(
+                    "PatchWork does not have "
+                    "permission to read Gmail. "
+                    "Reconnect Gmail and approve "
+                    "read-only access."
+                ),
+            ) from error
+
+        raise HTTPException(
+            status_code=(
+                status.HTTP_502_BAD_GATEWAY
+            ),
+            detail=(
+                "Unable to retrieve job "
+                "emails from Gmail."
+            ),
+        ) from error
+
+    except httpx.HTTPError as error:
+        raise HTTPException(
+            status_code=(
+                status.HTTP_502_BAD_GATEWAY
+            ),
+            detail=(
+                "Unable to connect to Gmail."
+            ),
+        ) from error
+
+    applications = [
+        build_job_application(
+            message
+        )
+        for message in messages
+    ]
+
+    try:
+        saved_applications = (
+            await save_job_applications(
+                access_token=(
+                    access_token
+                ),
+                user_id=user["id"],
+                applications=(
+                    applications
+                ),
+            )
+        )
+
+    except httpx.HTTPStatusError as error:
+        if (
+            error.response.status_code
+            in {
+                status.HTTP_401_UNAUTHORIZED,
+                status.HTTP_403_FORBIDDEN,
+            }
+        ):
+            raise HTTPException(
+                status_code=(
+                    status.HTTP_401_UNAUTHORIZED
+                ),
+                detail=(
+                    "Unable to authorize "
+                    "Job Review access."
+                ),
+            ) from error
+
+        raise HTTPException(
+            status_code=(
+                status.HTTP_502_BAD_GATEWAY
+            ),
+            detail=(
+                "Unable to save Job Review "
+                "data in Supabase."
+            ),
+        ) from error
+
+    except (
+        httpx.HTTPError,
+        RuntimeError,
+        ValueError,
+    ) as error:
+        raise HTTPException(
+            status_code=(
+                status.HTTP_502_BAD_GATEWAY
+            ),
+            detail=(
+                "Unable to save Job Review "
+                "data in Supabase."
+            ),
+        ) from error
+
+    return {
+        "status": "synced",
+        "message_count": len(
+            messages
+        ),
+        "application_count": len(
+            saved_applications
+        ),
+        "applications": (
+            saved_applications
+        ),
     }
 
 
@@ -87,14 +268,18 @@ async def parse_resume(
         get_authenticated_user
     ),
 ):
-    access_token = extract_bearer_token(
-        authorization
+    access_token = (
+        extract_bearer_token(
+            authorization
+        )
     )
 
     try:
         resume = await get_resume_by_id(
             access_token=access_token,
-            resume_id=str(resume_id),
+            resume_id=str(
+                resume_id
+            ),
         )
 
     except httpx.HTTPStatusError as error:
@@ -138,15 +323,22 @@ async def parse_resume(
             status_code=(
                 status.HTTP_404_NOT_FOUND
             ),
-            detail="Resume not found.",
+            detail=(
+                "Resume not found."
+            ),
         )
 
-    if resume.get("user_id") != user["id"]:
+    if (
+        resume.get("user_id")
+        != user["id"]
+    ):
         raise HTTPException(
             status_code=(
                 status.HTTP_404_NOT_FOUND
             ),
-            detail="Resume not found.",
+            detail=(
+                "Resume not found."
+            ),
         )
 
     try:
@@ -156,26 +348,42 @@ async def parse_resume(
             status="parsing",
         )
 
-        file_bytes = await download_resume_file(
-            access_token=access_token,
-            user_id=user["id"],
-            resume_id=resume["id"],
+        file_bytes = (
+            await download_resume_file(
+                access_token=(
+                    access_token
+                ),
+                user_id=user["id"],
+                resume_id=(
+                    resume["id"]
+                ),
+            )
         )
 
-        extracted_text = extract_resume_text(
-            file_bytes=file_bytes,
-            mime_type=resume["mime_type"],
+        extracted_text = (
+            extract_resume_text(
+                file_bytes=file_bytes,
+                mime_type=(
+                    resume[
+                        "mime_type"
+                    ]
+                ),
+            )
         )
 
-        parsed_data = parse_resume_structure(
-            extracted_text
+        parsed_data = (
+            parse_resume_structure(
+                extracted_text
+            )
         )
 
         await update_resume_parse_state(
             access_token=access_token,
             resume_id=resume["id"],
             status="parsed",
-            parsed_data=parsed_data,
+            parsed_data=(
+                parsed_data
+            ),
         )
 
     except (
@@ -188,10 +396,16 @@ async def parse_resume(
     ) as error:
         try:
             await update_resume_parse_state(
-                access_token=access_token,
-                resume_id=resume["id"],
+                access_token=(
+                    access_token
+                ),
+                resume_id=(
+                    resume["id"]
+                ),
                 status="error",
-                parse_error=str(error),
+                parse_error=str(
+                    error
+                ),
             )
         except (
             httpx.HTTPError,
@@ -203,7 +417,9 @@ async def parse_resume(
             status_code=(
                 status.HTTP_500_INTERNAL_SERVER_ERROR
             ),
-            detail="Unable to parse resume.",
+            detail=(
+                "Unable to parse resume."
+            ),
         ) from error
 
     return {
@@ -227,15 +443,20 @@ async def update_experience(
         get_authenticated_user
     ),
 ):
-    access_token = extract_bearer_token(
-        authorization
+    access_token = (
+        extract_bearer_token(
+            authorization
+        )
     )
 
     try:
         resume = await get_resume_by_id(
             access_token=access_token,
-            resume_id=str(resume_id),
+            resume_id=str(
+                resume_id
+            ),
         )
+
     except httpx.HTTPStatusError as error:
         if error.response.status_code in {
             status.HTTP_401_UNAUTHORIZED,
@@ -260,6 +481,7 @@ async def update_experience(
                 "from Supabase."
             ),
         ) from error
+
     except httpx.HTTPError as error:
         raise HTTPException(
             status_code=(
@@ -276,22 +498,32 @@ async def update_experience(
             status_code=(
                 status.HTTP_404_NOT_FOUND
             ),
-            detail="Resume not found.",
+            detail=(
+                "Resume not found."
+            ),
         )
 
-    if resume.get("user_id") != user["id"]:
+    if (
+        resume.get("user_id")
+        != user["id"]
+    ):
         raise HTTPException(
             status_code=(
                 status.HTTP_404_NOT_FOUND
             ),
-            detail="Resume not found.",
+            detail=(
+                "Resume not found."
+            ),
         )
 
     parsed_data = resume.get(
         "parsed_data"
     )
 
-    if not isinstance(parsed_data, dict):
+    if not isinstance(
+        parsed_data,
+        dict,
+    ):
         raise HTTPException(
             status_code=(
                 status.HTTP_409_CONFLICT
@@ -302,11 +534,16 @@ async def update_experience(
             ),
         )
 
-    experiences = parsed_data.get(
-        "experience"
+    experiences = (
+        parsed_data.get(
+            "experience"
+        )
     )
 
-    if not isinstance(experiences, list):
+    if not isinstance(
+        experiences,
+        list,
+    ):
         raise HTTPException(
             status_code=(
                 status.HTTP_409_CONFLICT
@@ -319,16 +556,23 @@ async def update_experience(
 
     if (
         experience_index < 0
-        or experience_index >= len(experiences)
+        or experience_index
+        >= len(experiences)
     ):
         raise HTTPException(
             status_code=(
                 status.HTTP_404_NOT_FOUND
             ),
-            detail="Experience not found.",
+            detail=(
+                "Experience not found."
+            ),
         )
 
-    heading = experience_update.heading.strip()
+    heading = (
+        experience_update
+        .heading
+        .strip()
+    )
 
     if not heading:
         raise HTTPException(
@@ -343,14 +587,19 @@ async def update_experience(
 
     bullets = [
         bullet.strip()
-        for bullet in experience_update.bullets
+        for bullet
+        in experience_update.bullets
         if bullet.strip()
     ]
 
     current_experience = (
-        experiences[experience_index]
+        experiences[
+            experience_index
+        ]
         if isinstance(
-            experiences[experience_index],
+            experiences[
+                experience_index
+            ],
             dict,
         )
         else {}
@@ -360,7 +609,9 @@ async def update_experience(
         **current_experience,
         "heading": heading,
         "bullets": bullets,
-        "hidden": experience_update.hidden,
+        "hidden": (
+            experience_update.hidden
+        ),
     }
 
     updated_experiences = [
@@ -373,15 +624,22 @@ async def update_experience(
 
     updated_parsed_data = {
         **parsed_data,
-        "experience": updated_experiences,
+        "experience": (
+            updated_experiences
+        ),
     }
 
     try:
         await update_resume_parsed_data(
             access_token=access_token,
-            resume_id=resume["id"],
-            parsed_data=updated_parsed_data,
+            resume_id=(
+                resume["id"]
+            ),
+            parsed_data=(
+                updated_parsed_data
+            ),
         )
+
     except httpx.HTTPStatusError as error:
         if error.response.status_code in {
             status.HTTP_401_UNAUTHORIZED,
@@ -406,6 +664,7 @@ async def update_experience(
                 "in Supabase."
             ),
         ) from error
+
     except (
         httpx.HTTPError,
         RuntimeError,
@@ -422,7 +681,13 @@ async def update_experience(
 
     return {
         "resume_id": resume["id"],
-        "experience_index": experience_index,
-        "experience": updated_experience,
-        "parsed_data": updated_parsed_data,
+        "experience_index": (
+            experience_index
+        ),
+        "experience": (
+            updated_experience
+        ),
+        "parsed_data": (
+            updated_parsed_data
+        ),
     }

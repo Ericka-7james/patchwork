@@ -334,7 +334,8 @@ a {
 .reset-password-intro h1,
 .dashboard-intro h1,
 .profile-intro h1,
-.resume-generator-intro h1 {
+.resume-generator-intro h1,
+.job-review-intro h1 {
   color: var(--text-strong);
 
   font-weight: 880;

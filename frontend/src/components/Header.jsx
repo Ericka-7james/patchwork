@@ -122,6 +122,15 @@ function Header({
                   {actions.dashboard}
                 </Link>
 
+                <Link
+                  to={routes.jobReview}
+                  className="app-user-dropdown-link"
+                  role="menuitem"
+                  onClick={closeUserMenu}
+                >
+                  {actions.jobReview}
+                </Link>
+
                 {hasResume && (
                   <>
                     <Link
