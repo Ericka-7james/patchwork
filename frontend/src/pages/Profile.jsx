@@ -2,9 +2,13 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import ExperienceModal from "../components/profile/ExperienceModal";
 import { PROFILE_CONTENT } from "../content/pages/profileContent";
 import { useAuth } from "../context/useAuth";
-import { getResumeByUserId } from "../services/resumeService";
+import {
+  getResumeByUserId,
+  updateResumeExperience,
+} from "../services/resumeService";
 import "./styles/Profile.css";
 
 const MOBILE_MEDIA_QUERY = "(max-width: 600px)";
@@ -107,6 +111,7 @@ function getProjectBullets(project) {
 
 function Profile() {
   const navigate = useNavigate();
+
   const { user, profile, signOut } = useAuth();
 
   const [resume, setResume] = useState(null);
@@ -117,15 +122,19 @@ function Profile() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const [isSkillsOpen, setIsSkillsOpen] = useState(getDefaultSectionOpenState);
+
   const [isEducationOpen, setIsEducationOpen] = useState(
     getDefaultSectionOpenState
   );
+
   const [isExperienceOpen, setIsExperienceOpen] = useState(
     getDefaultSectionOpenState
   );
+
   const [isProjectsOpen, setIsProjectsOpen] = useState(
     getDefaultSectionOpenState
   );
+
   const [isCertificationsOpen, setIsCertificationsOpen] = useState(
     getDefaultSectionOpenState
   );
@@ -133,6 +142,8 @@ function Profile() {
   const [openSkillCategories, setOpenSkillCategories] = useState([]);
   const [openExperienceItems, setOpenExperienceItems] = useState([]);
   const [openProjectItems, setOpenProjectItems] = useState([]);
+
+  const [selectedExperienceIndex, setSelectedExperienceIndex] = useState(null);
 
   const firstName = profile?.first_name;
 
@@ -153,16 +164,19 @@ function Profile() {
       try {
         const resumeData = await getResumeByUserId(user.id);
 
-        if (isActive) {
-          setResume(resumeData);
-
-          setOpenSkillCategories(
-            getDefaultSkillCategories(resumeData?.parsed_data?.skills ?? {})
-          );
-
-          setOpenExperienceItems([]);
-          setOpenProjectItems([]);
+        if (!isActive) {
+          return;
         }
+
+        setResume(resumeData);
+
+        setOpenSkillCategories(
+          getDefaultSkillCategories(resumeData?.parsed_data?.skills ?? {})
+        );
+
+        setOpenExperienceItems([]);
+        setOpenProjectItems([]);
+        setSelectedExperienceIndex(null);
       } catch (error) {
         if (isActive) {
           setResumeError(error.message || errors.loadFallback);
@@ -225,9 +239,13 @@ function Profile() {
 
     try {
       await signOut();
-      navigate(routes.login, { replace: true });
+
+      navigate(routes.login, {
+        replace: true,
+      });
     } catch (error) {
       setLogoutError(error.message || errors.logoutFallback);
+
       setIsLoggingOut(false);
     }
   }
@@ -250,13 +268,61 @@ function Profile() {
     );
   }
 
+  function handleExperienceModalOpen(index) {
+    setSelectedExperienceIndex(index);
+  }
+
+  function handleExperienceModalClose() {
+    setSelectedExperienceIndex(null);
+  }
+
+  async function handleExperienceApply(nextExperience) {
+    if (selectedExperienceIndex === null || !resume?.id) {
+      return;
+    }
+
+    setResumeError("");
+
+    try {
+      const result = await updateResumeExperience({
+        resumeId: resume.id,
+        experienceIndex: selectedExperienceIndex,
+        experience: nextExperience,
+      });
+
+      setResume((currentResume) => {
+        if (!currentResume) {
+          return currentResume;
+        }
+
+        return {
+          ...currentResume,
+          parsed_data: result.parsed_data,
+        };
+      });
+
+      setSelectedExperienceIndex(null);
+    } catch (error) {
+      setResumeError(error.message || "Unable to save experience changes.");
+    }
+  }
+
   const parsedData = resume?.parsed_data ?? {};
 
   const skills = parsedData.skills ?? {};
+
   const education = parsedData.education ?? [];
+
   const experience = parsedData.experience ?? [];
+
   const projects = parsedData.projects ?? [];
+
   const certifications = parsedData.certifications ?? [];
+
+  const selectedExperience =
+    selectedExperienceIndex !== null
+      ? (experience[selectedExperienceIndex] ?? null)
+      : null;
 
   const hasSkills =
     skills &&
@@ -285,7 +351,9 @@ function Profile() {
       <main className="profile-main">
         <section className="profile-intro">
           <p className="eyebrow">{intro.eyebrow}</p>
+
           <h1>{intro.heading}</h1>
+
           <p>{intro.description}</p>
         </section>
 
@@ -306,6 +374,7 @@ function Profile() {
             <div className="profile-column">
               <section className="profile-resume-file">
                 <span>{filename.label}</span>
+
                 <strong>{resume.original_filename}</strong>
               </section>
 
@@ -492,7 +561,10 @@ function Profile() {
                     <div className="profile-experience-list">
                       {experience.map((item, index) => {
                         const itemKey = `${item.heading}-${index}`;
+
                         const isOpen = openExperienceItems.includes(itemKey);
+
+                        const isHidden = item?.hidden === true;
 
                         return (
                           <article
@@ -505,7 +577,15 @@ function Profile() {
                               aria-expanded={isOpen}
                               onClick={() => handleExperienceToggle(itemKey)}
                             >
-                              <span>{item.heading}</span>
+                              <span className="profile-experience-trigger-copy">
+                                <span>{item.heading}</span>
+
+                                {isHidden && (
+                                  <small className="profile-experience-status">
+                                    Hidden from resume
+                                  </small>
+                                )}
+                              </span>
 
                               <span
                                 className="profile-nested-icon"
@@ -515,15 +595,30 @@ function Profile() {
                               </span>
                             </button>
 
-                            {isOpen && item.bullets?.length > 0 && (
+                            {isOpen && (
                               <div className="profile-nested-content">
-                                <ul>
-                                  {item.bullets.map((bullet, bulletIndex) => (
-                                    <li key={`${itemKey}-${bulletIndex}`}>
-                                      {bullet}
-                                    </li>
-                                  ))}
-                                </ul>
+                                {item.bullets?.length > 0 && (
+                                  <ul>
+                                    {item.bullets.map((bullet, bulletIndex) => (
+                                      <li key={`${itemKey}-${bulletIndex}`}>
+                                        {bullet}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+
+                                <div className="profile-experience-actions">
+                                  <button
+                                    type="button"
+                                    className="button button-small button-outline"
+                                    aria-label={`More options for ${item.heading}`}
+                                    onClick={() =>
+                                      handleExperienceModalOpen(index)
+                                    }
+                                  >
+                                    More
+                                  </button>
+                                </div>
                               </div>
                             )}
                           </article>
@@ -554,11 +649,15 @@ function Profile() {
                     <div className="profile-project-list">
                       {projects.map((project, index) => {
                         const title = getProjectTitle(project, index);
+
                         const description = getProjectDescription(project);
+
                         const dates = getProjectDates(project);
+
                         const bullets = getProjectBullets(project);
 
                         const itemKey = `${title}-${index}`;
+
                         const isOpen = openProjectItems.includes(itemKey);
 
                         return (
@@ -628,6 +727,15 @@ function Profile() {
       </main>
 
       <Footer />
+
+      {selectedExperienceIndex !== null && selectedExperience && (
+        <ExperienceModal
+          key={selectedExperienceIndex}
+          experience={selectedExperience}
+          onClose={handleExperienceModalClose}
+          onApply={handleExperienceApply}
+        />
+      )}
     </div>
   );
 }

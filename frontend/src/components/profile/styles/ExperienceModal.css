@@ -1,0 +1,284 @@
+.experience-modal-overlay {
+  position: fixed;
+  inset: 0;
+
+  z-index: 1000;
+
+  padding: 24px;
+
+  background: rgba(24, 28, 18, 0.48);
+
+  display: grid;
+  place-items: center;
+
+  overflow-y: auto;
+}
+
+.experience-modal {
+  width: min(680px, 100%);
+
+  max-height: min(760px, calc(100vh - 48px));
+
+  border: 1px solid var(--border);
+
+  border-radius: var(--radius-large);
+
+  background: white;
+
+  box-shadow: var(--shadow);
+
+  overflow-y: auto;
+}
+
+.experience-modal-header {
+  padding: 22px 22px 18px;
+
+  border-bottom: 1px solid var(--border);
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 20px;
+}
+
+.experience-modal-eyebrow {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: var(--olive);
+
+  font-size: 0.68rem;
+  font-weight: 850;
+
+  letter-spacing: 0.1em;
+
+  text-transform: uppercase;
+}
+
+.experience-modal-header h2 {
+  margin: 0;
+
+  color: var(--text-strong);
+
+  font-size: 1.3rem;
+  font-weight: 850;
+
+  letter-spacing: -0.03em;
+}
+
+.experience-modal-close {
+  width: 34px;
+  height: 34px;
+
+  flex: 0 0 auto;
+
+  border: 0;
+  border-radius: 999px;
+
+  background: var(--surface-olive);
+
+  display: grid;
+  place-items: center;
+
+  color: var(--olive-dark);
+
+  font-size: 1.2rem;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.experience-modal-close:hover {
+  background: rgba(97, 116, 61, 0.14);
+}
+
+.experience-modal-close:focus-visible {
+  outline: 2px solid var(--olive);
+  outline-offset: 2px;
+}
+
+.experience-modal-form {
+  padding: 22px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 24px;
+}
+
+.experience-modal-field {
+  display: flex;
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+.experience-modal-field > span,
+.experience-modal-section-heading > span {
+  color: var(--text-strong);
+
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.experience-modal-field textarea,
+.experience-modal-bullet textarea {
+  width: 100%;
+
+  padding: 11px 12px;
+
+  border: 1px solid var(--border);
+  border-radius: 11px;
+
+  background: var(--surface-soft);
+
+  color: var(--text);
+
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.55;
+
+  resize: vertical;
+}
+
+.experience-modal-field textarea:focus,
+.experience-modal-bullet textarea:focus {
+  outline: 2px solid var(--olive);
+  outline-offset: 1px;
+
+  border-color: transparent;
+}
+
+.experience-modal-bullets {
+  display: flex;
+  flex-direction: column;
+
+  gap: 12px;
+}
+
+.experience-modal-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+}
+
+.experience-modal-bullet-list {
+  display: flex;
+  flex-direction: column;
+
+  gap: 12px;
+}
+
+.experience-modal-bullet {
+  padding: 12px;
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius-medium);
+
+  background: var(--surface-soft);
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+.experience-modal-bullet textarea {
+  background: white;
+}
+
+.experience-modal-remove {
+  align-self: flex-end;
+
+  padding: 0;
+
+  border: 0;
+
+  background: transparent;
+
+  color: var(--text-soft);
+
+  font-size: 0.76rem;
+  font-weight: 750;
+
+  cursor: pointer;
+}
+
+.experience-modal-remove:hover {
+  color: var(--brown-dark);
+}
+
+.experience-modal-remove:focus-visible {
+  outline: 2px solid var(--olive);
+  outline-offset: 3px;
+}
+
+.experience-modal-empty {
+  margin: 0;
+
+  color: var(--text-soft);
+
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.experience-modal-footer {
+  padding-top: 18px;
+
+  border-top: 1px solid var(--border);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 16px;
+}
+
+.experience-modal-footer-actions {
+  display: flex;
+
+  gap: 9px;
+}
+
+@media (max-width: 600px) {
+  .experience-modal-overlay {
+    padding: 14px;
+    place-items: end center;
+  }
+
+  .experience-modal {
+    width: 100%;
+
+    max-height: calc(100vh - 28px);
+
+    border-radius: 18px;
+  }
+
+  .experience-modal-header {
+    padding: 18px 16px 15px;
+  }
+
+  .experience-modal-form {
+    padding: 18px 16px;
+
+    gap: 20px;
+  }
+
+  .experience-modal-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .experience-modal-footer-actions {
+    width: 100%;
+  }
+
+  .experience-modal-footer-actions .button {
+    flex: 1;
+    justify-content: center;
+  }
+}

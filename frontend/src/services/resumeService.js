@@ -10,21 +10,27 @@ function buildResumeStoragePath(userId, resumeId) {
   return `${userId}/${resumeId}/original`;
 }
 
-async function parseResume(resumeId) {
+async function getAccessToken() {
   const {
     data: { session },
-    error: sessionError,
+    error,
   } = await supabase.auth.getSession();
 
-  if (sessionError) {
-    throw new Error(sessionError.message || "Unable to verify your session.");
+  if (error) {
+    throw new Error(error.message || "Unable to verify your session.");
   }
 
   const accessToken = session?.access_token;
 
   if (!accessToken) {
-    throw new Error("You must be signed in to parse a resume.");
+    throw new Error("You must be signed in to update your resume.");
   }
+
+  return accessToken;
+}
+
+async function parseResume(resumeId) {
+  const accessToken = await getAccessToken();
 
   const response = await fetch(
     `${API_BASE_URL}/api/resumes/${resumeId}/parse`,
@@ -67,6 +73,52 @@ export async function getResumeByUserId(userId) {
   }
 
   return data;
+}
+
+export async function updateResumeExperience({
+  resumeId,
+  experienceIndex,
+  experience,
+}) {
+  if (!resumeId) {
+    throw new Error("Resume information is missing.");
+  }
+
+  if (!Number.isInteger(experienceIndex) || experienceIndex < 0) {
+    throw new Error("Experience information is missing.");
+  }
+
+  const accessToken = await getAccessToken();
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/resumes/${resumeId}/experience/${experienceIndex}`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        heading: experience?.heading ?? "",
+        bullets: Array.isArray(experience?.bullets) ? experience.bullets : [],
+        hidden: experience?.hidden === true,
+      }),
+    }
+  );
+
+  let result;
+
+  try {
+    result = await response.json();
+  } catch {
+    result = null;
+  }
+
+  if (!response.ok) {
+    throw new Error(result?.detail || "Unable to save experience changes.");
+  }
+
+  return result;
 }
 
 export async function uploadResume({ userId, file }) {
