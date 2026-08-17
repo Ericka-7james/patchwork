@@ -90,6 +90,7 @@ export function normalizeExperience(experience) {
               subtitle: "",
               dates: "",
               bullets: [],
+              hidden: false,
             }
           : null;
       }
@@ -128,6 +129,7 @@ export function normalizeExperience(experience) {
         subtitle: explicitHeading ? "" : role,
         dates: explicitHeading ? "" : dates,
         bullets,
+        hidden: item.hidden === true,
       };
     })
     .filter(Boolean);

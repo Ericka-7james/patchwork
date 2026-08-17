@@ -40,17 +40,29 @@ def _split_bullet_values(text: str) -> list[str]:
 
 def _parse_grouped_entries(
     lines: list[str],
+    *,
+    include_hidden: bool = False,
 ) -> list[dict]:
     entries: list[dict] = []
     current_entry: dict | None = None
 
+    def create_entry(
+        heading: str,
+    ) -> dict:
+        entry = {
+            "heading": heading,
+            "bullets": [],
+        }
+
+        if include_hidden:
+            entry["hidden"] = False
+
+        return entry
+
     for line in lines:
         if BULLET_PATTERN.match(line):
             if current_entry is None:
-                current_entry = {
-                    "heading": "",
-                    "bullets": [],
-                }
+                current_entry = create_entry("")
 
                 entries.append(
                     current_entry
@@ -62,10 +74,7 @@ def _parse_grouped_entries(
 
             continue
 
-        current_entry = {
-            "heading": line,
-            "bullets": [],
-        }
+        current_entry = create_entry(line)
 
         entries.append(
             current_entry
@@ -198,7 +207,8 @@ def parse_resume_structure(
                 sections.get(
                     "experience",
                     [],
-                )
+                ),
+                include_hidden=True,
             )
         ),
         "projects": (

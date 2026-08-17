@@ -27,7 +27,7 @@ async def get_resume_by_id(
                 "id": f"eq.{resume_id}",
                 "select": (
                     "id,user_id,original_filename,"
-                    "mime_type,status"
+                    "mime_type,status,parsed_data"
                 ),
             },
         )
@@ -116,6 +116,37 @@ async def update_resume_parse_state(
                 "id": f"eq.{resume_id}",
             },
             json=payload,
+        )
+
+    response.raise_for_status()
+
+
+async def update_resume_parsed_data(
+    access_token: str,
+    resume_id: str,
+    *,
+    parsed_data: dict,
+) -> None:
+    if not SUPABASE_URL:
+        raise RuntimeError(
+            "SUPABASE_URL is not configured."
+        )
+
+    async with httpx.AsyncClient() as client:
+        response = await client.patch(
+            f"{SUPABASE_URL}/rest/v1/resumes",
+            headers={
+                **get_supabase_headers(
+                    access_token
+                ),
+                "Prefer": "return=minimal",
+            },
+            params={
+                "id": f"eq.{resume_id}",
+            },
+            json={
+                "parsed_data": parsed_data,
+            },
         )
 
     response.raise_for_status()

@@ -380,6 +380,22 @@
   line-height: 1.5;
 }
 
+.profile-experience-trigger-copy {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.profile-experience-status {
+  color: var(--olive);
+
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
 .profile-experience-item ul {
   margin: 0;
 
@@ -397,6 +413,13 @@
 
 .profile-experience-item li:first-child {
   margin-top: 0;
+}
+
+.profile-experience-actions {
+  margin-top: 14px;
+
+  display: flex;
+  justify-content: flex-end;
 }
 
 /* Projects */

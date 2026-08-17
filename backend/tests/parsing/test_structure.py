@@ -59,6 +59,7 @@ def test_parse_resume_structure_parses_basic_profile():
                 "Built internal tools.",
                 "Added automated tests.",
             ],
+            "hidden": False,
         }
     ]
 
@@ -90,6 +91,53 @@ def test_parse_resume_structure_parses_basic_profile():
             "Terraform",
         ],
     }
+
+
+def test_parse_resume_structure_defaults_experience_to_visible():
+    text = (
+        "Ericka James\n"
+        "james@example.com\n"
+        "EXPERIENCE\n"
+        "Company A — Software Engineer\n"
+        "● Built production software.\n"
+        "● Improved reliability."
+    )
+
+    result = parse_resume_structure(text)
+
+    assert result["experience"] == [
+        {
+            "heading": "Company A — Software Engineer",
+            "bullets": [
+                "Built production software.",
+                "Improved reliability.",
+            ],
+            "hidden": False,
+        }
+    ]
+
+
+def test_parse_resume_structure_does_not_add_hidden_to_projects():
+    text = (
+        "Ericka James\n"
+        "james@example.com\n"
+        "PROJECTS\n"
+        "PatchWork\n"
+        "● Built resume tooling."
+    )
+
+    result = parse_resume_structure(text)
+
+    assert result["projects"] == [
+        {
+            "heading": "PatchWork",
+            "bullets": [
+                "Built resume tooling.",
+            ],
+        }
+    ]
+
+    assert "hidden" not in result["projects"][0]
 
 
 def test_parse_resume_structure_handles_missing_sections():

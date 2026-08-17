@@ -1,3 +1,4 @@
+import json
 from unittest.mock import AsyncMock, call, patch
 
 import httpx
@@ -10,6 +11,7 @@ from services.resume_service import (
     build_resume_storage_path,
     download_resume_file,
     get_resume_by_id,
+    update_resume_parsed_data,
     update_resume_parse_state,
 )
 
@@ -45,6 +47,17 @@ async def test_get_resume_by_id_returns_accessible_resume():
         "original_filename": "resume.pdf",
         "mime_type": "application/pdf",
         "status": "uploaded",
+        "parsed_data": {
+            "experience": [
+                {
+                    "heading": "Example Company — Engineer",
+                    "bullets": [
+                        "Built production software.",
+                    ],
+                    "hidden": False,
+                }
+            ],
+        },
     }
 
     def handler(request: httpx.Request):
@@ -52,6 +65,8 @@ async def test_get_resume_by_id_returns_accessible_resume():
         assert request.headers["apikey"] == "test-publishable-key"
 
         assert request.url.params["id"] == f"eq.{RESUME_ID}"
+
+        assert "parsed_data" in request.url.params["select"]
 
         return httpx.Response(
             status_code=200,
@@ -265,7 +280,15 @@ async def test_update_resume_parse_state_updates_resume_row():
             "return=minimal"
         )
 
-        assert request.read()
+        payload = json.loads(
+            request.content.decode()
+        )
+
+        assert payload == {
+            "status": "parsed",
+            "parsed_data": parsed_data,
+            "parse_error": None,
+        }
 
         return httpx.Response(
             status_code=204,
@@ -302,6 +325,89 @@ async def test_update_resume_parse_state_updates_resume_row():
         )
 
 
+@pytest.mark.asyncio
+async def test_update_resume_parsed_data_only_updates_parsed_data():
+    parsed_data = {
+        "name": "Ericka James",
+        "experience": [
+            {
+                "heading": "Example Company — Engineer",
+                "bullets": [
+                    "Built internal tools.",
+                ],
+                "hidden": True,
+            }
+        ],
+    }
+
+    def handler(request: httpx.Request):
+        assert request.method == "PATCH"
+
+        assert request.url.path == (
+            "/rest/v1/resumes"
+        )
+
+        assert request.url.params["id"] == (
+            f"eq.{RESUME_ID}"
+        )
+
+        assert request.headers["authorization"] == (
+            "Bearer test-token"
+        )
+
+        assert request.headers["apikey"] == (
+            "test-publishable-key"
+        )
+
+        assert request.headers["prefer"] == (
+            "return=minimal"
+        )
+
+        payload = json.loads(
+            request.content.decode()
+        )
+
+        assert payload == {
+            "parsed_data": parsed_data,
+        }
+
+        assert "status" not in payload
+        assert "parse_error" not in payload
+
+        return httpx.Response(
+            status_code=204,
+        )
+
+    transport = httpx.MockTransport(handler)
+
+    async_client = httpx.AsyncClient(
+        transport=transport,
+    )
+
+    with (
+        patch(
+            "services.resume_service.SUPABASE_URL",
+            "https://example.supabase.co",
+        ),
+        patch(
+            "services.resume_service.get_supabase_headers",
+            return_value={
+                "apikey": "test-publishable-key",
+                "Authorization": "Bearer test-token",
+            },
+        ),
+        patch(
+            "services.resume_service.httpx.AsyncClient",
+            return_value=async_client,
+        ),
+    ):
+        await update_resume_parsed_data(
+            access_token="test-token",
+            resume_id=RESUME_ID,
+            parsed_data=parsed_data,
+        )
+
+
 def test_parse_endpoint_parses_owned_resume():
     resume = {
         "id": RESUME_ID,
@@ -309,6 +415,7 @@ def test_parse_endpoint_parses_owned_resume():
         "original_filename": "resume.pdf",
         "mime_type": "application/pdf",
         "status": "uploaded",
+        "parsed_data": None,
     }
 
     file_bytes = b"%PDF-resume"
@@ -420,6 +527,7 @@ def test_parse_endpoint_marks_resume_error_when_parsing_fails():
         "original_filename": "resume.pdf",
         "mime_type": "application/pdf",
         "status": "uploaded",
+        "parsed_data": None,
     }
 
     with (
@@ -502,6 +610,7 @@ def test_parse_endpoint_rejects_mismatched_owner():
         "original_filename": "resume.pdf",
         "mime_type": "application/pdf",
         "status": "uploaded",
+        "parsed_data": None,
     }
 
     with patch(
