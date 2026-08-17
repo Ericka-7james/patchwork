@@ -32,9 +32,7 @@ describe("harvardResumeUtils", () => {
 
     it("cleans individual text values", () => {
       expect(cleanText("  Python  ")).toBe("Python");
-
       expect(cleanText("")).toBe("");
-
       expect(cleanText(null)).toBe("");
     });
 
@@ -69,9 +67,7 @@ describe("harvardResumeUtils", () => {
 
     it("handles invalid contact data", () => {
       expect(getContactItems(null)).toEqual([]);
-
       expect(getContactItems([])).toEqual([]);
-
       expect(getContactItems("invalid")).toEqual([]);
     });
   });
@@ -134,6 +130,7 @@ describe("harvardResumeUtils", () => {
           subtitle: "",
           dates: "",
           bullets: ["Built features."],
+          hidden: false,
         },
       ]);
     });
@@ -154,6 +151,50 @@ describe("harvardResumeUtils", () => {
           subtitle: "Software Engineer",
           dates: "2025",
           bullets: ["Built software."],
+          hidden: false,
+        },
+      ]);
+    });
+
+    it("preserves hidden experience state", () => {
+      expect(
+        normalizeExperience([
+          {
+            heading: "Hidden Company — Engineer",
+            bullets: [" Built software. "],
+            hidden: true,
+          },
+        ])
+      ).toEqual([
+        {
+          heading: "Hidden Company — Engineer",
+          subtitle: "",
+          dates: "",
+          bullets: ["Built software."],
+          hidden: true,
+        },
+      ]);
+    });
+
+    it("defaults experience without hidden to visible", () => {
+      const result = normalizeExperience([
+        {
+          heading: "Visible Company — Engineer",
+          bullets: ["Built software."],
+        },
+      ]);
+
+      expect(result[0].hidden).toBe(false);
+    });
+
+    it("defaults legacy string experience to visible", () => {
+      expect(normalizeExperience(["Legacy Company — Engineer"])).toEqual([
+        {
+          heading: "Legacy Company — Engineer",
+          subtitle: "",
+          dates: "",
+          bullets: [],
+          hidden: false,
         },
       ]);
     });
@@ -167,6 +208,8 @@ describe("harvardResumeUtils", () => {
       ]);
 
       expect(result[0].bullets).toEqual(["Detail one"]);
+
+      expect(result[0].hidden).toBe(false);
     });
 
     it("removes completely empty experience entries", () => {
