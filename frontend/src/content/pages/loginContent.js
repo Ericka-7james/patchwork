@@ -35,6 +35,7 @@ export const LOGIN_CONTENT = {
 
   errors: {
     missingCredentials: "Enter your email or phone number and password.",
+    invalidIdentifier: "Enter a valid email address or phone number.",
   },
 
   routes: {

@@ -1,12 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { render, screen } from "@testing-library/react";
+
 import userEvent from "@testing-library/user-event";
+
 import { MemoryRouter, Route, Routes } from "react-router-dom";
+
 import Login from "../../pages/Login";
 
 const { signInMock, signInWithGoogleMock, useAuthMock } = vi.hoisted(() => ({
   signInMock: vi.fn(),
+
   signInWithGoogleMock: vi.fn(),
+
   useAuthMock: vi.fn(),
 }));
 
@@ -50,7 +56,9 @@ async function fillLoginForm(
 describe("Login", () => {
   beforeEach(() => {
     signInMock.mockReset();
+
     signInWithGoogleMock.mockReset();
+
     useAuthMock.mockReset();
 
     useAuthMock.mockReturnValue({
@@ -64,6 +72,7 @@ describe("Login", () => {
     expect(
       screen.getByRole("heading", {
         level: 1,
+
         name: /pick up where you left off/i,
       })
     ).toBeInTheDocument();
@@ -71,6 +80,7 @@ describe("Login", () => {
     expect(
       screen.getByRole("heading", {
         level: 2,
+
         name: /welcome back to patchwork/i,
       })
     ).toBeInTheDocument();
@@ -181,6 +191,7 @@ describe("Login", () => {
 
     expect(signInMock).toHaveBeenCalledWith({
       email: "user@example.com",
+
       password: "S3cure!Pass",
     });
   });
@@ -206,8 +217,31 @@ describe("Login", () => {
 
     expect(signInMock).toHaveBeenCalledWith({
       phone: "+15551234567",
+
       password: "S3cure!Pass",
     });
+  });
+
+  it("shows a useful error for an invalid email or phone number", async () => {
+    const user = userEvent.setup();
+
+    renderLogin();
+
+    await fillLoginForm(user, {
+      identifier: "userexample.com",
+    });
+
+    await user.click(
+      screen.getByRole("button", {
+        name: /sign in/i,
+      })
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /enter a valid email address or phone number/i
+    );
+
+    expect(signInMock).not.toHaveBeenCalled();
   });
 
   it("redirects to the dashboard after successful login", async () => {
