@@ -9,7 +9,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-import JobReview from "./pages/JobReview";
+// import JobReview from "./pages/JobReview";
 
 function App() {
   return (
@@ -26,7 +26,8 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/resume-generator" element={<ResumeGenerator />} />
-            <Route path="/job-review" element={<JobReview />} />
+            {/* Job Review is temporarily disabled until Gmail sync is production-ready.
+            <Route path="/job-review" element={<JobReview />} /> */}
           </Route>
         </Routes>
       </AuthProvider>
