@@ -18,7 +18,9 @@ export const COMPONENT_CONTENT = {
       loggingOut: "Logging out...",
       back: "Back",
       dashboard: "Dashboard",
-      jobReview: "Job Review",
+
+      // jobReview: "Job Review",
+
       profile: "Profile",
       resumeGenerator: "Resume Generator",
     },
@@ -28,7 +30,9 @@ export const COMPONENT_CONTENT = {
       signup: "/signup",
       login: "/login",
       dashboard: "/dashboard",
-      jobReview: "/job-review",
+
+      // jobReview: "/job-review",
+
       profile: "/profile",
       resumeGenerator: "/resume-generator",
     },
