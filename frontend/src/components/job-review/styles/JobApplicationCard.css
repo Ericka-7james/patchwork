@@ -1,0 +1,246 @@
+.job-application-card {
+  width: 100%;
+
+  padding: 22px 24px;
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius-large);
+
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.98),
+    rgba(247, 244, 236, 0.92)
+  );
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 28px;
+
+  position: relative;
+
+  overflow: hidden;
+
+  box-shadow:
+    0 3px 10px rgba(38, 40, 31, 0.03),
+    0 16px 36px rgba(38, 40, 31, 0.05);
+
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background 150ms ease;
+}
+
+.job-application-card::before {
+  content: "";
+
+  position: absolute;
+
+  top: 16px;
+  bottom: 16px;
+  left: 0;
+
+  width: 4px;
+
+  border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+
+  background: linear-gradient(180deg, var(--olive), var(--olive-dark));
+}
+
+.job-application-card:hover {
+  transform: translateY(-2px);
+
+  border-color: rgba(97, 116, 61, 0.2);
+
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 1),
+    rgba(242, 245, 235, 0.94)
+  );
+
+  box-shadow:
+    0 4px 12px rgba(38, 40, 31, 0.04),
+    0 20px 44px rgba(38, 40, 31, 0.07);
+}
+
+.job-application-card-copy {
+  min-width: 0;
+
+  flex: 1;
+
+  padding-left: 4px;
+}
+
+.job-application-company {
+  display: inline-flex;
+  align-items: center;
+
+  min-height: 28px;
+
+  margin-bottom: 9px;
+
+  padding: 0 11px;
+
+  border: 1px solid rgba(138, 87, 44, 0.14);
+  border-radius: var(--radius-pill);
+
+  background: var(--surface-warm);
+
+  color: var(--brown-dark);
+
+  font-size: 0.71rem;
+  font-weight: 850;
+
+  letter-spacing: 0.045em;
+
+  text-transform: uppercase;
+}
+
+.job-application-card h2 {
+  margin: 0;
+
+  max-width: 760px;
+
+  color: var(--text-strong);
+
+  font-size: 1.08rem;
+  font-weight: 850;
+
+  line-height: 1.35;
+
+  letter-spacing: -0.03em;
+}
+
+.job-application-date {
+  margin: 8px 0 0;
+
+  color: var(--text-muted);
+
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+.job-application-card-actions {
+  min-width: 185px;
+
+  display: flex;
+  align-items: flex-end;
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+.job-application-status-field {
+  display: block;
+}
+
+.job-application-status-field select {
+  min-width: 172px;
+  min-height: 42px;
+
+  padding: 0 38px 0 15px;
+
+  border: 1px solid rgba(97, 116, 61, 0.22);
+  border-radius: var(--radius-pill);
+
+  background: var(--surface-olive);
+
+  color: var(--olive-dark);
+
+  font-size: 0.82rem;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.job-application-status-field select:hover:not(:disabled) {
+  border-color: rgba(97, 116, 61, 0.42);
+
+  background: var(--surface);
+
+  color: var(--olive-deep);
+}
+
+.job-application-status-field select:focus-visible {
+  outline: none;
+
+  border-color: var(--olive);
+
+  background: var(--surface);
+
+  box-shadow: 0 0 0 4px rgba(97, 116, 61, 0.12);
+}
+
+.job-application-status-field select:disabled {
+  opacity: 0.65;
+
+  cursor: not-allowed;
+}
+
+.job-application-manual-label {
+  padding-right: 4px;
+
+  color: var(--brown);
+
+  font-size: 0.69rem;
+  font-weight: 750;
+}
+
+@media (max-width: 760px) {
+  .job-application-card {
+    align-items: stretch;
+    flex-direction: column;
+
+    gap: 18px;
+  }
+
+  .job-application-card-actions {
+    min-width: 0;
+
+    align-items: stretch;
+  }
+
+  .job-application-status-field {
+    width: 100%;
+  }
+
+  .job-application-status-field select {
+    width: 100%;
+  }
+
+  .job-application-manual-label {
+    padding-left: 3px;
+    padding-right: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .job-application-card {
+    padding: 19px 18px 19px 21px;
+
+    border-radius: var(--radius-medium);
+  }
+
+  .job-application-card::before {
+    top: 14px;
+    bottom: 14px;
+
+    width: 3px;
+  }
+
+  .job-application-company {
+    font-size: 0.68rem;
+  }
+
+  .job-application-card h2 {
+    font-size: 1rem;
+  }
+}

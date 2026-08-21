@@ -1,43 +1,69 @@
 import { useState } from "react";
+
 import { Link, useNavigate } from "react-router-dom";
+
 import Header from "../components/Header";
+
 import Footer from "../components/Footer";
+
 import { LOGIN_CONTENT } from "../content/pages/loginContent";
+
 import { supabase } from "../lib/supabase";
+
+import { signInWithGoogle } from "../services/authService";
+
 import "./styles/AuthShared.css";
+
 import "./styles/Login.css";
 
 function Login() {
   const navigate = useNavigate();
 
   const [identifier, setIdentifier] = useState("");
+
   const [password, setPassword] = useState("");
+
   const [error, setError] = useState("");
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
 
   const { intro, card, fields, actions, switchText, errors, routes } =
     LOGIN_CONTENT;
 
   async function handleSubmit(event) {
     event.preventDefault();
+
     setError("");
 
     const normalizedIdentifier = identifier.trim();
 
     if (!normalizedIdentifier || !password) {
       setError(errors.missingCredentials);
+
       return;
     }
 
     const isEmail = normalizedIdentifier.includes("@");
 
+    const looksLikePhone = /^\+?[\d\s()-]+$/.test(normalizedIdentifier);
+
+    if (!isEmail && !looksLikePhone) {
+      setError(errors.invalidIdentifier);
+
+      return;
+    }
+
     const credentials = isEmail
       ? {
           email: normalizedIdentifier.toLowerCase(),
+
           password,
         }
       : {
           phone: normalizedIdentifier,
+
           password,
         };
 
@@ -50,10 +76,27 @@ function Login() {
 
     if (signInError) {
       setError(signInError.message);
+
       return;
     }
 
-    navigate(routes.dashboard, { replace: true });
+    navigate(routes.dashboard, {
+      replace: true,
+    });
+  }
+
+  async function handleGoogleSignIn() {
+    setError("");
+
+    setIsGoogleSubmitting(true);
+
+    try {
+      await signInWithGoogle();
+    } catch (googleError) {
+      setError(googleError.message || "Unable to continue with Google.");
+
+      setIsGoogleSubmitting(false);
+    }
   }
 
   return (
@@ -74,9 +117,22 @@ function Login() {
         <section className="login-card">
           <div className="login-heading">
             <p className="eyebrow">{card.eyebrow}</p>
+
             <h2>{card.heading}</h2>
+
             <p>{card.description}</p>
           </div>
+
+          <button
+            type="button"
+            className="button button-outline button-full"
+            onClick={handleGoogleSignIn}
+            disabled={isSubmitting || isGoogleSubmitting}
+          >
+            {isGoogleSubmitting
+              ? "Connecting to Google..."
+              : "Continue with Google"}
+          </button>
 
           <form className="login-form" onSubmit={handleSubmit}>
             <label className="login-field">
@@ -90,6 +146,7 @@ function Login() {
                 autoComplete="username"
                 placeholder={fields.identifier.placeholder}
                 required
+                disabled={isGoogleSubmitting}
               />
             </label>
 
@@ -104,6 +161,7 @@ function Login() {
                 autoComplete="current-password"
                 placeholder={fields.password.placeholder}
                 required
+                disabled={isGoogleSubmitting}
               />
             </label>
 
@@ -122,7 +180,7 @@ function Login() {
             <button
               className="button button-primary button-full"
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isGoogleSubmitting}
             >
               {isSubmitting ? actions.signingIn : actions.signIn}
             </button>

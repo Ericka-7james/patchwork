@@ -35,7 +35,8 @@ function HarvardResume({ parsedData = EMPTY_OBJECT, onFitChange }) {
   );
 
   const experience = useMemo(
-    () => normalizeExperience(parsedData.experience),
+    () =>
+      normalizeExperience(parsedData.experience).filter((item) => !item.hidden),
     [parsedData.experience]
   );
 
@@ -90,8 +91,9 @@ function HarvardResume({ parsedData = EMPTY_OBJECT, onFitChange }) {
 
   /*
    * Layout state determines which optional content is
-   * currently visible. We create the initial/full blocks
-   * first so the hook has something measurable.
+   * currently visible. Hidden experiences have already
+   * been removed before this point so they cannot affect
+   * page fitting, bullet limits, or pagination.
    */
 
   const initialBlocks = useMemo(

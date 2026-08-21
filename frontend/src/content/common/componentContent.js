@@ -10,6 +10,7 @@ export const COMPONENT_CONTENT = {
       authentication: "Authentication navigation",
       app: "App navigation",
     },
+
     actions: {
       signUp: "Sign up",
       logIn: "Log in",
@@ -17,17 +18,21 @@ export const COMPONENT_CONTENT = {
       loggingOut: "Logging out...",
       back: "Back",
       dashboard: "Dashboard",
+      jobReview: "Job Review",
       profile: "Profile",
       resumeGenerator: "Resume Generator",
     },
+
     routes: {
       home: "/",
       signup: "/signup",
       login: "/login",
       dashboard: "/dashboard",
+      jobReview: "/job-review",
       profile: "/profile",
       resumeGenerator: "/resume-generator",
     },
+
     signedInLabel: "Signed in as",
   },
 

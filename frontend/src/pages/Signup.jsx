@@ -4,6 +4,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { SIGNUP_CONTENT } from "../content/pages/signupContent";
 import { supabase } from "../lib/supabase";
+import { signInWithGoogle } from "../services/authService";
 import { validatePassword } from "../utils/validatePassword";
 import "./styles/AuthShared.css";
 import "./styles/Signup.css";
@@ -21,7 +22,9 @@ function Signup() {
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
   const [errors, setErrors] = useState([]);
   const [message, setMessage] = useState("");
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
 
   const {
     intro,
@@ -74,6 +77,7 @@ function Signup() {
     const { error } = await supabase.auth.signUp({
       email: normalizedFormData.email,
       password: normalizedFormData.password,
+
       options: {
         data: {
           username: normalizedFormData.username,
@@ -94,6 +98,20 @@ function Signup() {
     setFormData(INITIAL_FORM_DATA);
   }
 
+  async function handleGoogleSignIn() {
+    setErrors([]);
+    setMessage("");
+    setIsGoogleSubmitting(true);
+
+    try {
+      await signInWithGoogle();
+    } catch (googleError) {
+      setErrors([googleError.message || "Unable to continue with Google."]);
+
+      setIsGoogleSubmitting(false);
+    }
+  }
+
   return (
     <div className="auth-page">
       <Header variant="auth" showLogin />
@@ -110,6 +128,7 @@ function Signup() {
 
           <div className="auth-principle">
             <strong>{intro.principle.title}</strong>
+
             <span>{intro.principle.description}</span>
           </div>
         </section>
@@ -117,14 +136,28 @@ function Signup() {
         <section className="signup-card">
           <div className="signup-heading">
             <p className="eyebrow">{card.eyebrow}</p>
+
             <h2>{card.heading}</h2>
+
             <p>{card.description}</p>
           </div>
+
+          <button
+            type="button"
+            className="button button-outline button-full"
+            onClick={handleGoogleSignIn}
+            disabled={isSubmitting || isGoogleSubmitting}
+          >
+            {isGoogleSubmitting
+              ? "Connecting to Google..."
+              : "Continue with Google"}
+          </button>
 
           <form className="signup-form" onSubmit={handleSubmit}>
             <div className="field-row">
               <label className="form-field">
                 <span>{fields.firstName.label}</span>
+
                 <input
                   type="text"
                   name="firstName"
@@ -133,11 +166,13 @@ function Signup() {
                   autoComplete={fields.firstName.autoComplete}
                   placeholder={fields.firstName.placeholder}
                   required
+                  disabled={isGoogleSubmitting}
                 />
               </label>
 
               <label className="form-field">
                 <span>{fields.lastName.label}</span>
+
                 <input
                   type="text"
                   name="lastName"
@@ -146,12 +181,14 @@ function Signup() {
                   autoComplete={fields.lastName.autoComplete}
                   placeholder={fields.lastName.placeholder}
                   required
+                  disabled={isGoogleSubmitting}
                 />
               </label>
             </div>
 
             <label className="form-field">
               <span>{fields.username.label}</span>
+
               <input
                 type="text"
                 name="username"
@@ -161,11 +198,13 @@ function Signup() {
                 placeholder={fields.username.placeholder}
                 minLength={fields.username.minLength}
                 required
+                disabled={isGoogleSubmitting}
               />
             </label>
 
             <label className="form-field">
               <span>{fields.email.label}</span>
+
               <input
                 type="email"
                 name="email"
@@ -174,11 +213,13 @@ function Signup() {
                 autoComplete={fields.email.autoComplete}
                 placeholder={fields.email.placeholder}
                 required
+                disabled={isGoogleSubmitting}
               />
             </label>
 
             <label className="form-field">
               <span>{fields.password.label}</span>
+
               <input
                 type="password"
                 name="password"
@@ -188,11 +229,13 @@ function Signup() {
                 placeholder={fields.password.placeholder}
                 minLength={fields.password.minLength}
                 required
+                disabled={isGoogleSubmitting}
               />
             </label>
 
             <label className="form-field">
               <span>{fields.confirmPassword.label}</span>
+
               <input
                 type="password"
                 name="confirmPassword"
@@ -202,11 +245,13 @@ function Signup() {
                 placeholder={fields.confirmPassword.placeholder}
                 minLength={fields.confirmPassword.minLength}
                 required
+                disabled={isGoogleSubmitting}
               />
             </label>
 
             <div className="password-note">
               <strong>{passwordNote.title}</strong>
+
               <span>{passwordNote.description}</span>
             </div>
 
@@ -231,7 +276,7 @@ function Signup() {
             <button
               className="button button-primary button-full"
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isGoogleSubmitting}
             >
               {isSubmitting ? actions.creatingAccount : actions.createAccount}
             </button>

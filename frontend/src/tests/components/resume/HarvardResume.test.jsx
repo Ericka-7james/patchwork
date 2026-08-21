@@ -299,6 +299,60 @@ describe("HarvardResume", () => {
     expectVisibleText("B1");
   });
 
+  it("does not render hidden experience entries", () => {
+    render(
+      <HarvardResume
+        parsedData={createParsedData({
+          experience: [
+            {
+              heading: "Visible Company — Software Engineer",
+              bullets: ["Visible experience bullet."],
+              hidden: false,
+            },
+            {
+              heading: "Hidden Company — Software Engineer",
+              bullets: ["Hidden experience bullet."],
+              hidden: true,
+            },
+          ],
+        })}
+      />
+    );
+
+    expectVisibleText("Visible Company — Software Engineer");
+
+    expectVisibleText("Visible experience bullet.");
+
+    expectNoVisibleText("Hidden Company — Software Engineer");
+
+    expectNoVisibleText("Hidden experience bullet.");
+  });
+
+  it("renders updated visible experience content", () => {
+    render(
+      <HarvardResume
+        parsedData={createParsedData({
+          experience: [
+            {
+              heading: "PatchWork — Software Engineer",
+              bullets: [
+                "Built persistent resume experience editing.",
+                "Added hide and show controls for generated resumes.",
+              ],
+              hidden: false,
+            },
+          ],
+        })}
+      />
+    );
+
+    expectVisibleText("PatchWork — Software Engineer");
+
+    expectVisibleText("Built persistent resume experience editing.");
+
+    expectVisibleText("Added hide and show controls for generated resumes.");
+  });
+
   it("renders project headings separately", () => {
     render(
       <HarvardResume
