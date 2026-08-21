@@ -5,6 +5,7 @@ export async function signInWithGoogle() {
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
+
     options: {
       redirectTo,
     },
@@ -17,6 +18,7 @@ export async function signInWithGoogle() {
   return data;
 }
 
+/*
 export async function connectGmail() {
   const redirectTo = `${window.location.origin}/job-review`;
 
@@ -30,6 +32,7 @@ export async function connectGmail() {
 
       queryParams: {
         access_type: "offline",
+
         prompt: "consent",
       },
     },
@@ -41,3 +44,4 @@ export async function connectGmail() {
 
   return data;
 }
+*/

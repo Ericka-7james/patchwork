@@ -1,17 +1,26 @@
 import { useState } from "react";
+
 import { Link, useNavigate } from "react-router-dom";
+
 import { COMPONENT_CONTENT } from "../content/common/componentContent";
+
 import { useAuth } from "../context/useAuth";
 
 function Header({
   variant = "home",
+
   showLogin = false,
+
   showSignup = false,
+
   firstName = "",
+
   onLogout,
+
   isLoggingOut = false,
 }) {
   const navigate = useNavigate();
+
   const { hasResume } = useAuth();
 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -37,6 +46,7 @@ function Header({
     <header className="navbar">
       <Link to={routes.home} className="brand" onClick={closeUserMenu}>
         {brand.firstPart}
+
         <span>{brand.secondPart}</span>
       </Link>
 
@@ -122,6 +132,7 @@ function Header({
                   {actions.dashboard}
                 </Link>
 
+                {/*
                 <Link
                   to={routes.jobReview}
                   className="app-user-dropdown-link"
@@ -130,6 +141,7 @@ function Header({
                 >
                   {actions.jobReview}
                 </Link>
+                */}
 
                 {hasResume && (
                   <>
