@@ -36,6 +36,7 @@ async function parseResume(resumeId) {
     `${API_BASE_URL}/api/resumes/${resumeId}/parse`,
     {
       method: "POST",
+
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -94,13 +95,18 @@ export async function updateResumeExperience({
     `${API_BASE_URL}/api/resumes/${resumeId}/experience/${experienceIndex}`,
     {
       method: "PATCH",
+
       headers: {
         Authorization: `Bearer ${accessToken}`,
+
         "Content-Type": "application/json",
       },
+
       body: JSON.stringify({
         heading: experience?.heading ?? "",
+
         bullets: Array.isArray(experience?.bullets) ? experience.bullets : [],
+
         hidden: experience?.hidden === true,
       }),
     }
@@ -121,6 +127,54 @@ export async function updateResumeExperience({
   return result;
 }
 
+export async function updateProfileContact(contact) {
+  const accessToken = await getAccessToken();
+
+  const response = await fetch(`${API_BASE_URL}/api/profile/contact`, {
+    method: "PATCH",
+
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+
+      "Content-Type": "application/json",
+    },
+
+    body: JSON.stringify({
+      location: contact?.location ?? "",
+
+      address: contact?.address ?? "",
+
+      email: contact?.email ?? "",
+
+      phone: contact?.phone ?? "",
+
+      linkedin: contact?.linkedin ?? "",
+
+      github: contact?.github ?? "",
+
+      website: contact?.website ?? "",
+
+      portfolio: contact?.portfolio ?? "",
+
+      other: Array.isArray(contact?.other) ? contact.other : [],
+    }),
+  });
+
+  let result;
+
+  try {
+    result = await response.json();
+  } catch {
+    result = null;
+  }
+
+  if (!response.ok) {
+    throw new Error(result?.detail || "Unable to save contact information.");
+  }
+
+  return result;
+}
+
 export async function uploadResume({ userId, file }) {
   if (!userId) {
     throw new Error("You must be signed in to upload a resume.");
@@ -135,10 +189,15 @@ export async function uploadResume({ userId, file }) {
     .upsert(
       {
         user_id: userId,
+
         original_filename: file.name,
+
         mime_type: file.type,
+
         status: "uploaded",
+
         parsed_data: null,
+
         parse_error: null,
       },
       {
@@ -158,6 +217,7 @@ export async function uploadResume({ userId, file }) {
     .from(RESUME_BUCKET)
     .upload(storagePath, file, {
       contentType: file.type,
+
       upsert: true,
     });
 
@@ -169,7 +229,9 @@ export async function uploadResume({ userId, file }) {
 
   return {
     ...resume,
+
     status: parseResult.status,
+
     parsed_data: parseResult.parsed_data,
   };
 }

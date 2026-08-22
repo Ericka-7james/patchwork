@@ -15,11 +15,42 @@ SECTION_NAMES = {
 }
 
 BULLET_PATTERN = re.compile(
-    r"^\s*[●•▪◦‣⁃■□◆◇]\s*"
+    r"^\s*[●•▪◦‣⁃■□◆◇]*\s*"
 )
 
 SKILL_ROW_PATTERN = re.compile(
     r"^([^:]{1,60}):\s*(.+)$"
+)
+
+EMAIL_PATTERN = re.compile(
+    r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b",
+    re.IGNORECASE,
+)
+
+PHONE_PATTERN = re.compile(
+    r"(?:\+?1[\s.-]?)?"
+    r"(?:\(?\d{3}\)?[\s.-]?)"
+    r"\d{3}[\s.-]?\d{4}"
+)
+
+URL_PATTERN = re.compile(
+    r"(?:https?://|www\.)[^\s|•·]+",
+    re.IGNORECASE,
+)
+
+CONTACT_SEPARATOR_PATTERN = re.compile(
+    r"\s*(?:\||•|·)\s*"
+)
+
+ADDRESS_PATTERN = re.compile(
+    r"\b\d{1,6}\s+.+\b"
+    r"(?:street|st|road|rd|avenue|ave|boulevard|blvd|"
+    r"drive|dr|lane|ln|court|ct|way)\b",
+    re.IGNORECASE,
+)
+
+LOCATION_PATTERN = re.compile(
+    r"^[A-Za-z .'-]+,\s*[A-Za-z]{2,}(?:\s+\d{5}(?:-\d{4})?)?$"
 )
 
 
@@ -60,10 +91,20 @@ def _parse_grouped_entries(
         return entry
 
     for line in lines:
-        if BULLET_PATTERN.match(line):
+        if BULLET_PATTERN.match(line) and line[:1] in {
+            "●",
+            "•",
+            "▪",
+            "◦",
+            "‣",
+            "⁃",
+            "■",
+            "□",
+            "◆",
+            "◇",
+        }:
             if current_entry is None:
                 current_entry = create_entry("")
-
                 entries.append(
                     current_entry
                 )
@@ -108,6 +149,175 @@ def _parse_skills(
     return skills
 
 
+def _empty_contact() -> dict:
+    return {
+        "location": "",
+        "address": "",
+        "email": "",
+        "phone": "",
+        "linkedin": "",
+        "github": "",
+        "website": "",
+        "portfolio": "",
+        "other": [],
+    }
+
+
+def _clean_url(value: str) -> str:
+    return value.strip().rstrip(
+        ".,;)"
+    )
+
+
+def _parse_contact(
+    lines: list[str],
+) -> dict:
+    contact = _empty_contact()
+
+    if not lines:
+        return contact
+
+    pieces: list[str] = []
+
+    for line in lines:
+        split_values = CONTACT_SEPARATOR_PATTERN.split(
+            line
+        )
+
+        pieces.extend(
+            value.strip()
+            for value in split_values
+            if value.strip()
+        )
+
+    other: list[str] = []
+
+    for value in pieces:
+        email_match = EMAIL_PATTERN.search(
+            value
+        )
+
+        if email_match and not contact["email"]:
+            contact["email"] = (
+                email_match.group(0)
+                .strip()
+            )
+
+            remaining = EMAIL_PATTERN.sub(
+                "",
+                value,
+            ).strip(" -|•·,")
+
+            if not remaining:
+                continue
+
+            value = remaining
+
+        phone_match = PHONE_PATTERN.search(
+            value
+        )
+
+        if phone_match and not contact["phone"]:
+            contact["phone"] = (
+                phone_match.group(0)
+                .strip()
+            )
+
+            remaining = PHONE_PATTERN.sub(
+                "",
+                value,
+            ).strip(" -|•·,")
+
+            if not remaining:
+                continue
+
+            value = remaining
+
+        lower_value = value.lower()
+
+        if (
+            "linkedin.com" in lower_value
+            and not contact["linkedin"]
+        ):
+            url_match = URL_PATTERN.search(
+                value
+            )
+
+            contact["linkedin"] = _clean_url(
+                url_match.group(0)
+                if url_match
+                else value
+            )
+
+            continue
+
+        if (
+            "github.com" in lower_value
+            and not contact["github"]
+        ):
+            url_match = URL_PATTERN.search(
+                value
+            )
+
+            contact["github"] = _clean_url(
+                url_match.group(0)
+                if url_match
+                else value
+            )
+
+            continue
+
+        url_match = URL_PATTERN.search(
+            value
+        )
+
+        if url_match:
+            url = _clean_url(
+                url_match.group(0)
+            )
+
+            if (
+                any(
+                    keyword in lower_value
+                    for keyword in {
+                        "portfolio",
+                        "projects",
+                    }
+                )
+                and not contact["portfolio"]
+            ):
+                contact["portfolio"] = url
+
+            elif not contact["website"]:
+                contact["website"] = url
+
+            else:
+                other.append(url)
+
+            continue
+
+        if (
+            ADDRESS_PATTERN.search(value)
+            and not contact["address"]
+        ):
+            contact["address"] = value
+            continue
+
+        if (
+            LOCATION_PATTERN.match(value)
+            and not contact["location"]
+        ):
+            contact["location"] = value
+            continue
+
+        if value not in other:
+            other.append(value)
+
+    contact["other"] = other
+
+    return contact
+
+
 def parse_resume_structure(
     text: str,
 ) -> dict:
@@ -120,7 +330,7 @@ def parse_resume_structure(
     if not lines:
         return {
             "name": "",
-            "contact": "",
+            "contact": _empty_contact(),
             "summary": "",
             "core_competencies": [],
             "education": [],
@@ -132,16 +342,25 @@ def parse_resume_structure(
 
     name = lines[0]
 
-    contact = ""
+    contact_lines: list[str] = []
 
     body_start = 1
 
-    if (
-        len(lines) > 1
-        and lines[1] not in SECTION_NAMES
+    while (
+        body_start < len(lines)
+        and lines[body_start].upper()
+        not in SECTION_NAMES
+        and len(contact_lines) < 4
     ):
-        contact = lines[1]
-        body_start = 2
+        contact_lines.append(
+            lines[body_start]
+        )
+
+        body_start += 1
+
+    contact = _parse_contact(
+        contact_lines
+    )
 
     sections: dict[
         str,

@@ -3,6 +3,19 @@ from parsing.structure import (
 )
 
 
+EMPTY_CONTACT = {
+    "location": "",
+    "address": "",
+    "email": "",
+    "phone": "",
+    "linkedin": "",
+    "github": "",
+    "website": "",
+    "portfolio": "",
+    "other": [],
+}
+
+
 def test_parse_resume_structure_parses_basic_profile():
     text = (
         "Ericka James\n"
@@ -31,9 +44,10 @@ def test_parse_resume_structure_parses_basic_profile():
 
     assert result["name"] == "Ericka James"
 
-    assert result["contact"] == (
-        "james@example.com"
-    )
+    assert result["contact"] == {
+        **EMPTY_CONTACT,
+        "email": "james@example.com",
+    }
 
     assert result["summary"] == (
         "Software Engineer with automation experience."
@@ -93,6 +107,28 @@ def test_parse_resume_structure_parses_basic_profile():
     }
 
 
+def test_parse_resume_structure_parses_contact_information():
+    text = (
+        "Ericka James\n"
+        "Atlanta, GA | ericka@example.com | (404) 555-1111\n"
+        "linkedin.com/in/ericka | github.com/ericka\n"
+        "https://erickajames.dev\n"
+        "SUMMARY\n"
+        "Software Engineer."
+    )
+
+    result = parse_resume_structure(text)
+
+    contact = result["contact"]
+
+    assert contact["location"] == "Atlanta, GA"
+    assert contact["email"] == "ericka@example.com"
+    assert contact["phone"] == "(404) 555-1111"
+    assert contact["linkedin"] == "linkedin.com/in/ericka"
+    assert contact["github"] == "github.com/ericka"
+    assert contact["website"] == "https://erickajames.dev"
+
+
 def test_parse_resume_structure_defaults_experience_to_visible():
     text = (
         "Ericka James\n"
@@ -147,9 +183,9 @@ def test_parse_resume_structure_handles_missing_sections():
         "Software Engineer."
     )
 
-    assert result["name"] == (
-        "Ericka James"
-    )
+    assert result["name"] == "Ericka James"
+
+    assert result["contact"] == EMPTY_CONTACT
 
     assert result["summary"] == (
         "Software Engineer."
@@ -167,7 +203,7 @@ def test_parse_resume_structure_returns_empty_profile_for_empty_text():
 
     assert result == {
         "name": "",
-        "contact": "",
+        "contact": EMPTY_CONTACT,
         "summary": "",
         "core_competencies": [],
         "education": [],

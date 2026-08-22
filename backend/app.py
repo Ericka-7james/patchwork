@@ -34,6 +34,8 @@ from services.job_review_service import (
 from services.resume_service import (
     download_resume_file,
     get_resume_by_id,
+    initialize_profile_contact,
+    update_profile_contact,
     update_resume_parsed_data,
     update_resume_parse_state,
 )
@@ -49,6 +51,21 @@ class ExperienceUpdate(BaseModel):
     )
 
     hidden: bool = False
+
+
+class ContactUpdate(BaseModel):
+    location: str = ""
+    address: str = ""
+    email: str = ""
+    phone: str = ""
+    linkedin: str = ""
+    github: str = ""
+    website: str = ""
+    portfolio: str = ""
+
+    other: list[str] = Field(
+        default_factory=list
+    )
 
 
 app = FastAPI()
@@ -377,6 +394,19 @@ async def parse_resume(
             )
         )
 
+        await initialize_profile_contact(
+            access_token=access_token,
+            user_id=user["id"],
+            auth_email=user.get(
+                "email"
+            ),
+            parsed_contact=(
+                parsed_data.get(
+                    "contact"
+                )
+            ),
+        )
+
         await update_resume_parse_state(
             access_token=access_token,
             resume_id=resume["id"],
@@ -689,5 +719,109 @@ async def update_experience(
         ),
         "parsed_data": (
             updated_parsed_data
+        ),
+    }
+
+
+@app.patch(
+    "/api/profile/contact"
+)
+async def update_contact(
+    contact_update: ContactUpdate,
+    authorization: str | None = Header(
+        default=None
+    ),
+    user: dict = Depends(
+        get_authenticated_user
+    ),
+):
+    access_token = (
+        extract_bearer_token(
+            authorization
+        )
+    )
+
+    contact = {
+        "resume_email": (
+            contact_update.email
+        ),
+        "resume_phone": (
+            contact_update.phone
+        ),
+        "location": (
+            contact_update.location
+        ),
+        "address": (
+            contact_update.address
+        ),
+        "linkedin": (
+            contact_update.linkedin
+        ),
+        "github": (
+            contact_update.github
+        ),
+        "website": (
+            contact_update.website
+        ),
+        "portfolio": (
+            contact_update.portfolio
+        ),
+        "contact_other": (
+            contact_update.other
+        ),
+        "contact_initialized": True,
+    }
+
+    try:
+        updated_profile = (
+            await update_profile_contact(
+                access_token=access_token,
+                user_id=user["id"],
+                contact=contact,
+            )
+        )
+
+    except httpx.HTTPStatusError as error:
+        if error.response.status_code in {
+            status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_403_FORBIDDEN,
+        }:
+            raise HTTPException(
+                status_code=(
+                    status.HTTP_401_UNAUTHORIZED
+                ),
+                detail=(
+                    "Unable to authorize "
+                    "profile update."
+                ),
+            ) from error
+
+        raise HTTPException(
+            status_code=(
+                status.HTTP_502_BAD_GATEWAY
+            ),
+            detail=(
+                "Unable to update profile "
+                "contact information."
+            ),
+        ) from error
+
+    except (
+        httpx.HTTPError,
+        RuntimeError,
+    ) as error:
+        raise HTTPException(
+            status_code=(
+                status.HTTP_502_BAD_GATEWAY
+            ),
+            detail=(
+                "Unable to update profile "
+                "contact information."
+            ),
+        ) from error
+
+    return {
+        "profile": (
+            updated_profile
         ),
     }
