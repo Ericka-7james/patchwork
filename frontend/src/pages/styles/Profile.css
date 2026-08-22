@@ -109,6 +109,96 @@
   font-weight: 750;
 }
 
+/* Contact information */
+
+.profile-contact-card {
+  padding: 17px 20px;
+
+  border: 1px solid var(--border);
+
+  border-radius: var(--radius-medium);
+
+  background: rgba(255, 255, 255, 0.96);
+
+  box-shadow: var(--shadow-small);
+}
+
+.profile-contact-heading {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 18px;
+}
+
+.profile-contact-heading > div {
+  min-width: 0;
+}
+
+.profile-contact-label {
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: var(--olive);
+
+  font-size: 0.72rem;
+  font-weight: 850;
+
+  letter-spacing: 0.1em;
+
+  text-transform: uppercase;
+}
+
+.profile-contact-preview {
+  min-width: 0;
+
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: 5px 9px;
+
+  color: var(--text);
+
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.profile-contact-preview-item {
+  min-width: 0;
+
+  overflow-wrap: anywhere;
+}
+
+.profile-contact-preview-item:not(:last-child)::after {
+  content: "·";
+
+  margin-left: 9px;
+
+  color: var(--text-soft);
+}
+
+.profile-contact-more {
+  color: var(--olive);
+
+  font-weight: 750;
+}
+
+.profile-contact-empty {
+  margin: 0;
+
+  color: var(--text-soft);
+
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.profile-contact-card .button {
+  flex: 0 0 auto;
+}
+
 /* Main sections */
 
 .profile-section {
@@ -772,6 +862,24 @@
     padding: 16px;
 
     border-radius: 15px;
+  }
+
+  .profile-contact-card {
+    padding: 16px;
+
+    border-radius: 15px;
+  }
+
+  .profile-contact-heading {
+    align-items: stretch;
+
+    flex-direction: column;
+
+    gap: 12px;
+  }
+
+  .profile-contact-card .button {
+    align-self: flex-start;
   }
 
   .profile-section {

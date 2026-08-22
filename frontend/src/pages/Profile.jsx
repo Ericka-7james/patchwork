@@ -1,18 +1,30 @@
 import { useEffect, useState } from "react";
+
 import { Link, useNavigate } from "react-router-dom";
+
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+
 import ExperienceModal from "../components/profile/ExperienceModal";
+import ContactModal from "../components/profile/ContactModal";
+
 import { PROFILE_CONTENT } from "../content/pages/profileContent";
+
 import { useAuth } from "../context/useAuth";
+
 import {
   getResumeByUserId,
+  updateProfileContact,
   updateResumeExperience,
 } from "../services/resumeService";
+
 import "./styles/Profile.css";
 
 const MOBILE_MEDIA_QUERY = "(max-width: 600px)";
+
 const MAX_OPEN_ITEMS = 3;
+
+const MAX_CONTACT_PREVIEW_ITEMS = 3;
 
 function isMobileViewport() {
   if (
@@ -109,16 +121,42 @@ function getProjectBullets(project) {
   return [];
 }
 
+function getContactItems(contact) {
+  if (!contact || typeof contact !== "object" || Array.isArray(contact)) {
+    return [];
+  }
+
+  const values = [
+    contact.location,
+    contact.email,
+    contact.phone,
+    contact.linkedin,
+    contact.github,
+    contact.website,
+    contact.portfolio,
+    contact.address,
+
+    ...(Array.isArray(contact.other) ? contact.other : []),
+  ];
+
+  return values
+    .filter((value) => typeof value === "string" && value.trim().length > 0)
+    .map((value) => value.trim());
+}
+
 function Profile() {
   const navigate = useNavigate();
 
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, refreshProfile } = useAuth();
 
   const [resume, setResume] = useState(null);
+
   const [isLoadingResume, setIsLoadingResume] = useState(true);
+
   const [resumeError, setResumeError] = useState("");
 
   const [logoutError, setLogoutError] = useState("");
+
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const [isSkillsOpen, setIsSkillsOpen] = useState(getDefaultSectionOpenState);
@@ -140,10 +178,14 @@ function Profile() {
   );
 
   const [openSkillCategories, setOpenSkillCategories] = useState([]);
+
   const [openExperienceItems, setOpenExperienceItems] = useState([]);
+
   const [openProjectItems, setOpenProjectItems] = useState([]);
 
   const [selectedExperienceIndex, setSelectedExperienceIndex] = useState(null);
+
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
 
   const firstName = profile?.first_name;
 
@@ -159,6 +201,7 @@ function Profile() {
 
     async function loadResume() {
       setIsLoadingResume(true);
+
       setResumeError("");
 
       try {
@@ -175,8 +218,12 @@ function Profile() {
         );
 
         setOpenExperienceItems([]);
+
         setOpenProjectItems([]);
+
         setSelectedExperienceIndex(null);
+
+        setIsContactModalOpen(false);
       } catch (error) {
         if (isActive) {
           setResumeError(error.message || errors.loadFallback);
@@ -206,9 +253,13 @@ function Profile() {
       const shouldOpen = !event.matches;
 
       setIsSkillsOpen(shouldOpen);
+
       setIsEducationOpen(shouldOpen);
+
       setIsExperienceOpen(shouldOpen);
+
       setIsProjectsOpen(shouldOpen);
+
       setIsCertificationsOpen(shouldOpen);
 
       if (event.matches) {
@@ -223,6 +274,7 @@ function Profile() {
       }
 
       setOpenExperienceItems([]);
+
       setOpenProjectItems([]);
     }
 
@@ -235,6 +287,7 @@ function Profile() {
 
   async function handleLogout() {
     setLogoutError("");
+
     setIsLoggingOut(true);
 
     try {
@@ -276,6 +329,14 @@ function Profile() {
     setSelectedExperienceIndex(null);
   }
 
+  function handleContactModalOpen() {
+    setIsContactModalOpen(true);
+  }
+
+  function handleContactModalClose() {
+    setIsContactModalOpen(false);
+  }
+
   async function handleExperienceApply(nextExperience) {
     if (selectedExperienceIndex === null || !resume?.id) {
       return;
@@ -286,7 +347,9 @@ function Profile() {
     try {
       const result = await updateResumeExperience({
         resumeId: resume.id,
+
         experienceIndex: selectedExperienceIndex,
+
         experience: nextExperience,
       });
 
@@ -297,6 +360,7 @@ function Profile() {
 
         return {
           ...currentResume,
+
           parsed_data: result.parsed_data,
         };
       });
@@ -307,7 +371,50 @@ function Profile() {
     }
   }
 
+  async function handleContactApply(nextContact) {
+    setResumeError("");
+
+    try {
+      await updateProfileContact(nextContact);
+
+      await refreshProfile();
+
+      setIsContactModalOpen(false);
+    } catch (error) {
+      setResumeError(error.message || "Unable to save contact information.");
+    }
+  }
+
   const parsedData = resume?.parsed_data ?? {};
+
+  const contact = {
+    email: profile?.resume_email ?? "",
+
+    phone: profile?.resume_phone ?? "",
+
+    location: profile?.location ?? "",
+
+    address: profile?.address ?? "",
+
+    linkedin: profile?.linkedin ?? "",
+
+    github: profile?.github ?? "",
+
+    website: profile?.website ?? "",
+
+    portfolio: profile?.portfolio ?? "",
+
+    other: Array.isArray(profile?.contact_other) ? profile.contact_other : [],
+  };
+
+  const contactItems = getContactItems(contact);
+
+  const contactPreviewItems = contactItems.slice(0, MAX_CONTACT_PREVIEW_ITEMS);
+
+  const hiddenContactCount = Math.max(
+    0,
+    contactItems.length - contactPreviewItems.length
+  );
 
   const skills = parsedData.skills ?? {};
 
@@ -376,6 +483,47 @@ function Profile() {
                 <span>{filename.label}</span>
 
                 <strong>{resume.original_filename}</strong>
+              </section>
+
+              <section className="profile-contact-card">
+                <div className="profile-contact-heading">
+                  <div>
+                    <span className="profile-contact-label">
+                      User&apos;s Contact
+                    </span>
+
+                    {contactPreviewItems.length > 0 ? (
+                      <div className="profile-contact-preview">
+                        {contactPreviewItems.map((item, index) => (
+                          <span
+                            className="profile-contact-preview-item"
+                            key={`${item}-${index}`}
+                          >
+                            {item}
+                          </span>
+                        ))}
+
+                        {hiddenContactCount > 0 && (
+                          <span className="profile-contact-more">
+                            + {hiddenContactCount} more
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="profile-contact-empty">
+                        No contact information was found.
+                      </p>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    className="button button-small button-outline"
+                    onClick={handleContactModalOpen}
+                  >
+                    Modify
+                  </button>
+                </div>
               </section>
 
               <details
@@ -734,6 +882,14 @@ function Profile() {
           experience={selectedExperience}
           onClose={handleExperienceModalClose}
           onApply={handleExperienceApply}
+        />
+      )}
+
+      {isContactModalOpen && (
+        <ContactModal
+          contact={contact}
+          onClose={handleContactModalClose}
+          onApply={handleContactApply}
         />
       )}
     </div>

@@ -1,28 +1,42 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+
 import { supabase } from "../lib/supabase";
+
 import AuthContext from "./AuthContextBase";
 
-/**
- * Provides Supabase authentication, profile, and resume state to the application.
- *
- * The provider initializes the current session, listens for authentication
- * changes, loads the authenticated user's profile, checks whether the user
- * already has a resume, and exposes shared auth actions.
- *
- * @param {object} props Component properties.
- * @param {React.ReactNode} props.children Child components that need auth state.
- * @returns {JSX.Element} The authentication context provider.
- */
+const PROFILE_SELECT = [
+  "id",
+  "username",
+  "first_name",
+  "last_name",
+  "phone",
+  "resume_email",
+  "resume_phone",
+  "location",
+  "address",
+  "linkedin",
+  "github",
+  "website",
+  "portfolio",
+  "contact_other",
+  "contact_initialized",
+].join(", ");
+
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
+
   const [profile, setProfile] = useState(null);
+
   const [hasResume, setHasResume] = useState(false);
 
   const [isLoading, setIsLoading] = useState(true);
+
   const [isProfileLoading, setIsProfileLoading] = useState(false);
+
   const [isResumeStateLoading, setIsResumeStateLoading] = useState(false);
 
   const user = session?.user ?? null;
+
   const userId = user?.id ?? null;
 
   useEffect(() => {
@@ -69,7 +83,9 @@ export function AuthProvider({ children }) {
       if (!nextSession?.user) {
         setProfile(null);
         setHasResume(false);
+
         setIsProfileLoading(false);
+
         setIsResumeStateLoading(false);
       }
 
@@ -78,52 +94,60 @@ export function AuthProvider({ children }) {
 
     return () => {
       isActive = false;
+
       subscription.unsubscribe();
     };
   }, []);
 
+  const refreshProfile = useCallback(async () => {
+    if (!userId) {
+      setProfile(null);
+
+      return null;
+    }
+
+    setIsProfileLoading(true);
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select(PROFILE_SELECT)
+      .eq("id", userId)
+      .single();
+
+    if (error) {
+      console.error("Unable to load user profile:", {
+        message: error.message,
+
+        code: error.code,
+
+        details: error.details,
+
+        hint: error.hint,
+      });
+
+      setProfile(null);
+
+      setIsProfileLoading(false);
+
+      return null;
+    }
+
+    setProfile(data);
+
+    setIsProfileLoading(false);
+
+    return data;
+  }, [userId]);
+
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       return undefined;
     }
 
-    let isActive = true;
+    refreshProfile();
 
-    async function loadProfile() {
-      setIsProfileLoading(true);
-
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, username, first_name")
-        .eq("id", user.id)
-        .single();
-
-      if (!isActive) {
-        return;
-      }
-
-      if (error) {
-        console.error("Unable to load user profile:", {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint,
-        });
-
-        setProfile(null);
-      } else {
-        setProfile(data);
-      }
-
-      setIsProfileLoading(false);
-    }
-
-    loadProfile();
-
-    return () => {
-      isActive = false;
-    };
-  }, [user]);
+    return undefined;
+  }, [userId, refreshProfile]);
 
   useEffect(() => {
     if (!userId) {
@@ -148,8 +172,11 @@ export function AuthProvider({ children }) {
       if (error) {
         console.error("Unable to load user resume state:", {
           message: error.message,
+
           code: error.code,
+
           details: error.details,
+
           hint: error.hint,
         });
 
@@ -171,6 +198,7 @@ export function AuthProvider({ children }) {
   const refreshResumeState = useCallback(async () => {
     if (!userId) {
       setHasResume(false);
+
       return false;
     }
 
@@ -185,12 +213,16 @@ export function AuthProvider({ children }) {
     if (error) {
       console.error("Unable to refresh user resume state:", {
         message: error.message,
+
         code: error.code,
+
         details: error.details,
+
         hint: error.hint,
       });
 
       setHasResume(false);
+
       setIsResumeStateLoading(false);
 
       return false;
@@ -199,6 +231,7 @@ export function AuthProvider({ children }) {
     const resumeExists = Boolean(data?.id);
 
     setHasResume(resumeExists);
+
     setIsResumeStateLoading(false);
 
     return resumeExists;
@@ -221,6 +254,7 @@ export function AuthProvider({ children }) {
       isLoading,
       isProfileLoading,
       isResumeStateLoading,
+      refreshProfile,
       refreshResumeState,
       signOut,
     }),
@@ -232,6 +266,7 @@ export function AuthProvider({ children }) {
       isLoading,
       isProfileLoading,
       isResumeStateLoading,
+      refreshProfile,
       refreshResumeState,
     ]
   );
