@@ -24,19 +24,13 @@ const PROFILE_SELECT = [
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
-
   const [profile, setProfile] = useState(null);
-
   const [hasResume, setHasResume] = useState(false);
-
   const [isLoading, setIsLoading] = useState(true);
-
   const [isProfileLoading, setIsProfileLoading] = useState(false);
-
   const [isResumeStateLoading, setIsResumeStateLoading] = useState(false);
 
   const user = session?.user ?? null;
-
   const userId = user?.id ?? null;
 
   useEffect(() => {
@@ -83,9 +77,7 @@ export function AuthProvider({ children }) {
       if (!nextSession?.user) {
         setProfile(null);
         setHasResume(false);
-
         setIsProfileLoading(false);
-
         setIsResumeStateLoading(false);
       }
 
@@ -94,7 +86,6 @@ export function AuthProvider({ children }) {
 
     return () => {
       isActive = false;
-
       subscription.unsubscribe();
     };
   }, []);
@@ -102,7 +93,6 @@ export function AuthProvider({ children }) {
   const refreshProfile = useCallback(async () => {
     if (!userId) {
       setProfile(null);
-
       return null;
     }
 
@@ -117,23 +107,18 @@ export function AuthProvider({ children }) {
     if (error) {
       console.error("Unable to load user profile:", {
         message: error.message,
-
         code: error.code,
-
         details: error.details,
-
         hint: error.hint,
       });
 
       setProfile(null);
-
       setIsProfileLoading(false);
 
       return null;
     }
 
     setProfile(data);
-
     setIsProfileLoading(false);
 
     return data;
@@ -144,10 +129,41 @@ export function AuthProvider({ children }) {
       return undefined;
     }
 
-    refreshProfile();
+    let isActive = true;
 
-    return undefined;
-  }, [userId, refreshProfile]);
+    async function loadProfile() {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select(PROFILE_SELECT)
+        .eq("id", userId)
+        .single();
+
+      if (!isActive) {
+        return;
+      }
+
+      if (error) {
+        console.error("Unable to load user profile:", {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+        });
+
+        setProfile(null);
+      } else {
+        setProfile(data);
+      }
+
+      setIsProfileLoading(false);
+    }
+
+    loadProfile();
+
+    return () => {
+      isActive = false;
+    };
+  }, [userId]);
 
   useEffect(() => {
     if (!userId) {
@@ -172,11 +188,8 @@ export function AuthProvider({ children }) {
       if (error) {
         console.error("Unable to load user resume state:", {
           message: error.message,
-
           code: error.code,
-
           details: error.details,
-
           hint: error.hint,
         });
 
@@ -198,7 +211,6 @@ export function AuthProvider({ children }) {
   const refreshResumeState = useCallback(async () => {
     if (!userId) {
       setHasResume(false);
-
       return false;
     }
 
@@ -213,16 +225,12 @@ export function AuthProvider({ children }) {
     if (error) {
       console.error("Unable to refresh user resume state:", {
         message: error.message,
-
         code: error.code,
-
         details: error.details,
-
         hint: error.hint,
       });
 
       setHasResume(false);
-
       setIsResumeStateLoading(false);
 
       return false;
@@ -231,7 +239,6 @@ export function AuthProvider({ children }) {
     const resumeExists = Boolean(data?.id);
 
     setHasResume(resumeExists);
-
     setIsResumeStateLoading(false);
 
     return resumeExists;
