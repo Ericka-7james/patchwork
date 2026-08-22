@@ -5,6 +5,7 @@ export const SIGNUP_CONTENT = {
     headingAccent: "from something real.",
     description:
       "Create your PatchWork account and start improving the way your experience is presented.",
+
     principle: {
       title: "PatchWork promise",
       description:
@@ -16,7 +17,7 @@ export const SIGNUP_CONTENT = {
     eyebrow: "Create account",
     heading: "Welcome to PatchWork",
     description:
-      "Email signup is available now. Phone authentication comes next.",
+      "Create your account with email and add the phone number you want associated with your profile.",
   },
 
   fields: {
@@ -25,28 +26,39 @@ export const SIGNUP_CONTENT = {
       placeholder: "First name",
       autoComplete: "given-name",
     },
+
     lastName: {
       label: "Last name",
       placeholder: "Last name",
       autoComplete: "family-name",
     },
+
     username: {
       label: "Username",
       placeholder: "yourusername",
       autoComplete: "username",
       minLength: 3,
     },
+
     email: {
       label: "Email address",
       placeholder: "you@example.com",
       autoComplete: "email",
     },
+
+    phone: {
+      label: "Phone number",
+      placeholder: "+15551234567",
+      autoComplete: "tel",
+    },
+
     password: {
       label: "Password",
       placeholder: "9+ characters",
       autoComplete: "new-password",
       minLength: 9,
     },
+
     confirmPassword: {
       label: "Confirm password",
       placeholder: "Enter it again",
@@ -70,7 +82,9 @@ export const SIGNUP_CONTENT = {
   messages: {
     accountCreated:
       "Your account was created. Check your email to confirm your address before signing in.",
+
     passwordMismatch: "Passwords do not match.",
+
     validationHeading: "Check a few things:",
   },
 

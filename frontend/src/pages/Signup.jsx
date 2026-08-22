@@ -1,11 +1,18 @@
 import { useState } from "react";
+
 import { Link } from "react-router-dom";
+
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+
 import { SIGNUP_CONTENT } from "../content/pages/signupContent";
+
 import { supabase } from "../lib/supabase";
+
 import { signInWithGoogle } from "../services/authService";
+
 import { validatePassword } from "../utils/validatePassword";
+
 import "./styles/AuthShared.css";
 import "./styles/Signup.css";
 
@@ -14,16 +21,20 @@ const INITIAL_FORM_DATA = {
   lastName: "",
   username: "",
   email: "",
+  phone: "",
   password: "",
   confirmPassword: "",
 };
 
 function Signup() {
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
+
   const [errors, setErrors] = useState([]);
+
   const [message, setMessage] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
 
   const {
@@ -42,6 +53,7 @@ function Signup() {
 
     setFormData((currentFormData) => ({
       ...currentFormData,
+
       [name]: value,
     }));
   }
@@ -54,14 +66,21 @@ function Signup() {
 
     const normalizedFormData = {
       ...formData,
+
       firstName: formData.firstName.trim(),
+
       lastName: formData.lastName.trim(),
+
       username: formData.username.trim().toLowerCase(),
+
       email: formData.email.trim().toLowerCase(),
+
+      phone: formData.phone.trim(),
     };
 
     if (normalizedFormData.password !== normalizedFormData.confirmPassword) {
       setErrors([messages.passwordMismatch]);
+
       return;
     }
 
@@ -69,6 +88,7 @@ function Signup() {
 
     if (!passwordValidation.isValid) {
       setErrors(passwordValidation.errors);
+
       return;
     }
 
@@ -76,13 +96,18 @@ function Signup() {
 
     const { error } = await supabase.auth.signUp({
       email: normalizedFormData.email,
+
       password: normalizedFormData.password,
 
       options: {
         data: {
           username: normalizedFormData.username,
+
           first_name: normalizedFormData.firstName,
+
           last_name: normalizedFormData.lastName,
+
+          phone: normalizedFormData.phone,
         },
       },
     });
@@ -91,16 +116,19 @@ function Signup() {
 
     if (error) {
       setErrors([error.message]);
+
       return;
     }
 
     setMessage(messages.accountCreated);
+
     setFormData(INITIAL_FORM_DATA);
   }
 
   async function handleGoogleSignIn() {
     setErrors([]);
     setMessage("");
+
     setIsGoogleSubmitting(true);
 
     try {
@@ -212,6 +240,21 @@ function Signup() {
                 onChange={handleChange}
                 autoComplete={fields.email.autoComplete}
                 placeholder={fields.email.placeholder}
+                required
+                disabled={isGoogleSubmitting}
+              />
+            </label>
+
+            <label className="form-field">
+              <span>{fields.phone.label}</span>
+
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                autoComplete={fields.phone.autoComplete}
+                placeholder={fields.phone.placeholder}
                 required
                 disabled={isGoogleSubmitting}
               />

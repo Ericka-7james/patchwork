@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { render, screen, within } from "@testing-library/react";
+
 import userEvent from "@testing-library/user-event";
+
 import { MemoryRouter } from "react-router-dom";
+
 import Signup from "../../pages/Signup";
 
 const { signUpMock, signInWithGoogleMock, useAuthMock } = vi.hoisted(() => ({
@@ -41,6 +45,7 @@ async function fillSignupForm(
     lastName = "James",
     username = "patchuser",
     email = "user@example.com",
+    phone = "4045551111",
     password = "S3cure!Pass",
     confirmPassword = "S3cure!Pass",
   } = {}
@@ -52,6 +57,8 @@ async function fillSignupForm(
   await user.type(screen.getByLabelText(/username/i), username);
 
   await user.type(screen.getByLabelText(/email address/i), email);
+
+  await user.type(screen.getByLabelText(/phone number/i), phone);
 
   await user.type(screen.getByLabelText(/^password$/i), password);
 
@@ -99,6 +106,8 @@ describe("Signup", () => {
     expect(screen.getByLabelText(/username/i)).toBeInTheDocument();
 
     expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
+
+    expect(screen.getByLabelText(/phone number/i)).toBeInTheDocument();
 
     expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
 
@@ -229,7 +238,7 @@ describe("Signup", () => {
     expect(signUpMock).not.toHaveBeenCalled();
   });
 
-  it("calls Supabase with normalized signup data", async () => {
+  it("calls Supabase with normalized signup data and phone metadata", async () => {
     const user = userEvent.setup();
 
     signUpMock.mockResolvedValue({
@@ -243,6 +252,7 @@ describe("Signup", () => {
       lastName: "  James  ",
       username: "  PatchUser  ",
       email: "  USER@example.com  ",
+      phone: "  4045551111  ",
     });
 
     await user.click(
@@ -260,6 +270,7 @@ describe("Signup", () => {
           username: "patchuser",
           first_name: "Ericka",
           last_name: "James",
+          phone: "4045551111",
         },
       },
     });
@@ -313,6 +324,8 @@ describe("Signup", () => {
     expect(screen.getByLabelText(/username/i)).toHaveValue("");
 
     expect(screen.getByLabelText(/email address/i)).toHaveValue("");
+
+    expect(screen.getByLabelText(/phone number/i)).toHaveValue("");
 
     expect(screen.getByLabelText(/^password$/i)).toHaveValue("");
 
